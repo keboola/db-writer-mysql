@@ -1,0 +1,7 @@
+vendor/
+/data/
+tests/data/out/
+.idea/
+composer.phar
+runtests.sh
+test.php
