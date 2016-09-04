@@ -12,6 +12,7 @@ use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Writer;
 use Keboola\DbWriter\WriterInterface;
+use Keboola\Temp\Temp;
 
 class MySQL extends Writer implements WriterInterface
 {
@@ -67,8 +68,8 @@ class MySQL extends Writer implements WriterInterface
 		}
 
 		// ssl encryption
-		if (!empty($params['ssl']) && !empty($params['ssl']['enabled'])) {
-			$ssl = $params['ssl'];
+		if (!empty($dbParams['ssl']) && !empty($dbParams['ssl']['enabled'])) {
+			$ssl = $dbParams['ssl'];
 
 			$temp = new Temp(defined('APP_NAME') ? APP_NAME : 'wr-db-mysql');
 
@@ -98,9 +99,12 @@ class MySQL extends Writer implements WriterInterface
 			$dbParams['database']
 		);
 
+		$this->logger->info("Connecting to DSN '" . $dsn . "' " . ($isSsl ? 'Using SSL' : ''));
+
 		$pdo = new \PDO($dsn, $dbParams['user'], $dbParams['#password'], $options);
 		$pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 		$pdo->exec("SET NAMES utf8;");
+
 
 
 		return $pdo;
@@ -335,5 +339,17 @@ return;
 		// insert new data
 		$query = "INSERT INTO {$targetTable} ({$columnsClause}) SELECT * FROM {$sourceTable}";
 		$this->db->exec($query);
+	}
+
+	/**
+	 * @param $sslCa
+	 * @param Temp $temp
+	 * @return string
+	 */
+	private function createSSLFile($sslCa, Temp $temp)
+	{
+		$filename = $temp->createTmpFile('ssl');
+		file_put_contents($filename, $sslCa);
+		return realpath($filename);
 	}
 }
