@@ -105,7 +105,15 @@ class MySQL extends Writer implements WriterInterface
 		$pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 		$pdo->exec("SET NAMES utf8;");
 
+		if ($isSsl) {
+			$status = $pdo->query("SHOW STATUS LIKE 'Ssl_cipher';")->fetch(\PDO::FETCH_ASSOC);
 
+			if (empty($status['Value'])) {
+				throw new UserException(sprintf("Connection is not encrypted"));
+			} else {
+				$this->logger->info("Using SSL cipher: " . $status['Value']);
+			}
+		}
 
 		return $pdo;
 	}
@@ -130,7 +138,7 @@ class MySQL extends Writer implements WriterInterface
 				'query' => $query
 			]);
 		}
-return;
+		return;
 		$csv = new CsvFile($sourceFilename);
 
 		// skip the header
@@ -351,5 +359,10 @@ return;
 		$filename = $temp->createTmpFile('ssl');
 		file_put_contents($filename, $sslCa);
 		return realpath($filename);
+	}
+
+	public function testConnection()
+	{
+		$this->db->query('SELECT NOW();')->execute();
 	}
 }

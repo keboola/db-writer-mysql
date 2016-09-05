@@ -93,7 +93,7 @@ class MySQLTest extends BaseTest
 		$sourceTableId = $table['tableId'];
 		$outputTableName = $table['dbName'];
 		$sourceFilename = $this->dataDir . "/mysql/" . $sourceTableId . ".csv";
-//var_dump($sourceFilename); die();
+
 		$this->writer->drop($outputTableName);
 		$this->writer->create($table);
 		$this->writer->write(realpath($sourceFilename), $table);

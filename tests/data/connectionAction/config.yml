@@ -1,0 +1,61 @@
+action: testConnection
+parameters:
+    db:
+#        driver: mysql
+        host: mysql
+        port: 3306
+        database: test
+        user: root
+        "#password": rootpassword
+
+    tables:
+        -
+            tableId: simple
+            dbName: simple
+            export: true
+#            lastChange:
+            incremental: false
+            primaryKey: [id]
+            items:
+                -
+                    name: id
+                    dbName: id
+                    type: int
+                    size:
+                    nullable:
+                    default:
+                -
+                    name: name
+                    dbName: name
+                    type: varchar
+                    size: 255
+                    nullable:
+                    default:
+                -
+                    name: glasses
+                    dbName: glasses
+                    type: varchar
+                    size: 255
+                    nullable:
+                    default:
+
+        -
+            tableId: special
+            dbName: special
+            export: false
+#            lastChange:
+            items:
+                -
+                    name: col1
+                    dbName: col1
+                    type: varchar
+                    size: 255
+                    nullable:
+                    default:
+                -
+                    name: col2
+                    dbName: col2
+                    type: varchar
+                    size: 255
+                    nullable:
+                    default:
