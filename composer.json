@@ -1,5 +1,5 @@
 {
-    "name": "keboola/db-extractor-mysql",
+    "name": "keboola/db-writer-mysql",
     "license": "MIT",
     "type": "project",
     "description": "Keboola MySQL DB Writer",

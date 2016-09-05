@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "9a7b09bc1d53d1a6fbb67ffbb939a6a1",
-    "content-hash": "fef3899fa9260e2a93ca34cfed2784c8",
+    "hash": "f80f5bf340852be3df39642923c24fd0",
+    "content-hash": "66fad2b4ea3776684ed7a794e056c260",
     "packages": [
         {
             "name": "keboola/csv",
@@ -40,16 +40,16 @@
         },
         {
             "name": "keboola/db-writer-common",
-            "version": "0.0.3",
+            "version": "0.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/db-writer-common.git",
-                "reference": "3de134d0bd7a5010d2a6660763d1609a0cd6468b"
+                "reference": "1c83e542ec16a47ca0bcba2c434ab1a9dfa662bc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/db-writer-common/zipball/3de134d0bd7a5010d2a6660763d1609a0cd6468b",
-                "reference": "3de134d0bd7a5010d2a6660763d1609a0cd6468b",
+                "url": "https://api.github.com/repos/keboola/db-writer-common/zipball/1c83e542ec16a47ca0bcba2c434ab1a9dfa662bc",
+                "reference": "1c83e542ec16a47ca0bcba2c434ab1a9dfa662bc",
                 "shasum": ""
             },
             "require": {
@@ -90,7 +90,7 @@
                 "library",
                 "writer"
             ],
-            "time": "2016-09-01 14:22:58"
+            "time": "2016-09-05 13:13:44"
         },
         {
             "name": "keboola/php-temp",
