@@ -1,18 +1,18 @@
 parameters:
     db:
-        driver: mysql
+#        driver: mysql
         host: mysql
         port: 3306
         database: test
         user: root
-        password: rootpassword
+        "#password": rootpassword
 
     tables:
         -
             tableId: simple
             dbName: simple
-            export: 1
-            lastChange:
+            export: true
+#            lastChange:
             incremental: true
             primaryKey: [id]
             items:
@@ -41,8 +41,8 @@ parameters:
         -
             tableId: special
             dbName: special
-            export: 1
-            lastChange:
+            export: false
+#            lastChange:
             items:
                 -
                     name: col1
