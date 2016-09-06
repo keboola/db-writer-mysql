@@ -30,10 +30,6 @@ class MySQL extends Writer implements WriterInterface
 		'char', 'varchar',
 	];
 
-	private static $unicodeTypes = [
-		'nchar', 'nvarchar', 'ntext',
-	];
-
 	private static $numericTypes = [
 		'int', 'smallint', 'bigint',
 		'decimal', 'float'
@@ -134,6 +130,8 @@ class MySQL extends Writer implements WriterInterface
 			$this->db->exec($query);
 		} catch (\PDOException $e) {
 			throw $e;
+			//@FIXME userexception
+
 			throw new UserException("Query failed: " . $e->getMessage(), $e, [
 				'query' => $query
 			]);
@@ -204,10 +202,6 @@ class MySQL extends Writer implements WriterInterface
 
 			if (!in_array(strtolower($type), self::$numericTypes)) {
 				$data = "'" . $data . "'";
-			}
-
-			if (in_array(strtolower($type), self::$unicodeTypes)) {
-				return "N" . $data;
 			}
 
 			return $data;

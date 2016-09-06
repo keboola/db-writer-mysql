@@ -6,6 +6,7 @@ use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Symfony\Component\Yaml\Yaml;
 use Monolog\Handler\NullHandler;
+use Keboola\DbWriter\Configuration\MySQLConfigDefinition;
 
 define('APP_NAME', 'wr-db-mysql');
 define('ROOT_PATH', __DIR__);
@@ -34,6 +35,7 @@ try {
     }
 
     $app = new Application($config);
+    $app->setConfigDefinition(new MySQLConfigDefinition());
     echo json_encode($app->run());
 } catch(UserException $e) {
     $logger->log('error', $e->getMessage(), (array) $e->getData());
