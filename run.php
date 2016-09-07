@@ -1,12 +1,11 @@
 <?php
 
-use Keboola\DbWriter\Application;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Symfony\Component\Yaml\Yaml;
 use Monolog\Handler\NullHandler;
-use Keboola\DbWriter\Configuration\MySQLConfigDefinition;
+use Keboola\DbWriter\MySQLApplication;
 
 define('APP_NAME', 'wr-db-mysql');
 define('ROOT_PATH', __DIR__);
@@ -28,14 +27,11 @@ try {
 
     $action = isset($config['action']) ? $config['action'] : $action;
 
-    var_dump($action);
-
     if ($action !== 'run') {
         $logger->setHandlers(array(new NullHandler(Logger::INFO)));
     }
 
-    $app = new Application($config);
-    $app->setConfigDefinition(new MySQLConfigDefinition());
+    $app = new MySQLApplication($config, $logger);
     echo json_encode($app->run());
 } catch(UserException $e) {
     $logger->log('error', $e->getMessage(), (array) $e->getData());

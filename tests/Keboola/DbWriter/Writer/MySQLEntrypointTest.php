@@ -42,6 +42,9 @@ class MySQLEntrypointTest extends BaseTest
 
 		$this->assertEquals(0, $returnCode);
 
+		$this->assertCount(1, $output);
+		$this->assertEquals($lastOutput, reset($output));
+
 		$data = json_decode($lastOutput, true);
 		$this->assertArrayHasKey('status', $data);
 		$this->assertEquals('success', $data['status']);
