@@ -13,6 +13,7 @@ app:
     MYSQL_DB_DATABASE: test
   links:
     - mysql
+    - sshproxy
 
 mysql:
   image: mysql:5.6
@@ -23,12 +24,12 @@ mysql:
     MYSQL_DATABASE: test
     MYSQL_ROOT_PASSWORD: rootpassword
 
-#sshproxy:
-#  build: ./tests/env/sshproxy
-#  volumes:
-#      - ./tests/env/sshproxy:/code
-#  working_dir: /code
-#  ports:
-#    - "2222:22"
-#  links:
-#    - mssql
+sshproxy:
+  build: ./tests/env/sshproxy
+  volumes:
+      - ./tests/env/sshproxy:/code
+  working_dir: /code
+  ports:
+    - "2222:22"
+  links:
+    - mysql

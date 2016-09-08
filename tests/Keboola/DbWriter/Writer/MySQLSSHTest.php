@@ -9,9 +9,12 @@
 namespace Keboola\DbWriter\Writer;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Test\BaseTest;
+use Keboola\DbWriter\WriterFactory;
+use Monolog\Handler\TestHandler;
 
-class MySQLTest extends BaseTest
+class MySQLSSHTest extends BaseTest
 {
 	const DRIVER = 'mysql';
 
@@ -20,11 +23,42 @@ class MySQLTest extends BaseTest
 
 	private $config;
 
+	/**
+	 * @var TestHandler
+	 */
+	private $testHandler;
+
 	public function setUp()
 	{
+		if (!defined('APP_NAME')) {
+			define('APP_NAME', 'wr-db-mysql');
+		}
+
 		$this->config = $this->getConfig(self::DRIVER);
 		$this->config['parameters']['writer_class'] = 'MySQL';
-		$this->writer = $this->getWriter($this->config['parameters']);
+
+		$this->config['parameters']['db']['ssh'] = [
+			'enabled' => true,
+			'keys' => [
+				'#private' => $this->getEnv('mysql', 'DB_SSH_KEY_PRIVATE'),
+				'public' => $this->getEnv('mysql', 'DB_SSH_KEY_PUBLIC')
+			],
+			'user' => 'root',
+			'sshHost' => 'sshproxy',
+			'remoteHost' => 'mysql',
+			'remotePort' => '3306',
+			'localPort' => '23306',
+		];
+
+
+		$this->testHandler = new TestHandler();
+
+		$logger = new Logger(APP_NAME);
+		$logger->setHandlers([$this->testHandler]);
+
+		$writerFactory = new WriterFactory($this->config['parameters']);
+
+		$this->writer = $writerFactory->create($logger);
 		$conn = $this->writer->getConnection();
 
 		$tables = $this->config['parameters']['tables'];
@@ -32,56 +66,6 @@ class MySQLTest extends BaseTest
 		foreach ($tables as $table) {
 			$conn->exec(sprintf('DROP TABLE IF EXISTS %s', $table['dbName']));
 		}
-	}
-
-	public function testDrop()
-	{
-		$conn = $this->writer->getConnection();
-		$this->writer->drop("dropMe");
-
-		$conn->exec("CREATE TABLE dropMe (
-          id INT PRIMARY KEY,
-          firstname VARCHAR(30) NOT NULL,
-          lastname VARCHAR(30) NOT NULL)");
-
-		$this->writer->drop("dropMe");
-
-		$stmt = $conn->query("SELECT Distinct TABLE_NAME FROM information_schema.TABLES");
-		$res = $stmt->fetchAll();
-
-		$tableExists = false;
-		foreach ($res as $r) {
-			if ($r[0] == "dropMe") {
-				$tableExists = true;
-				break;
-			}
-		}
-
-		$this->assertFalse($tableExists);
-	}
-
-	public function testCreate()
-	{
-		$tables = $this->config['parameters']['tables'];
-
-		foreach ($tables as $table) {
-			$this->writer->create($table);
-		}
-
-		/** @var \PDO $conn */
-		$conn = $this->writer->getConnection();
-		$stmt = $conn->query("SELECT Distinct TABLE_NAME FROM information_schema.TABLES");
-		$res = $stmt->fetchAll();
-
-		$tableExits = false;
-		foreach ($res as $r) {
-			if ($r['TABLE_NAME'] == $tables[0]['dbName']) {
-				$tableExits = true;
-				break;
-			}
-		}
-
-		$this->assertTrue($tableExits);
 	}
 
 	public function testWriteMysql()
@@ -167,52 +151,20 @@ class MySQLTest extends BaseTest
 		}
 
 		$this->assertEquals($srcArr, $resArr);
-	}
 
-	public function testGetAllowedTypes()
-	{
-		$allowedTypes = $this->writer->getAllowedTypes();
+		$records = $this->testHandler->getRecords();
 
-		$this->assertEquals([
-			'int', 'smallint', 'bigint',
-			'decimal', 'float', 'double',
-			'date', 'datetime', 'timestamp',
-			'char', 'varchar', 'text', 'blob'
-		], $allowedTypes);
-	}
+		$this->assertCount(2, $records);
 
-	public function testUpsert()
-	{
-		$conn = $this->writer->getConnection();
-		$tables = $this->config['parameters']['tables'];
+		$this->assertArrayHasKey('message', $records[0]);
+		$this->assertArrayHasKey('level', $records[0]);
+		$this->assertArrayHasKey('message', $records[1]);
+		$this->assertArrayHasKey('level', $records[1]);
 
-		$table = $tables[0];
-		$sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . ".csv";
-		$targetTable = $table;
-		$table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
+		$this->assertEquals(Logger::INFO, $records[0]['level']);
+		$this->assertRegExp('/Creating SSH tunnel/ui', $records[0]['message']);
 
-		// first write
-		$this->writer->create($targetTable);
-		$this->writer->write($sourceFilename, $targetTable);
-
-		// second write
-		$sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_increment.csv";
-		$this->writer->create($table);
-		$this->writer->write($sourceFilename, $table);
-		$this->writer->upsert($table, $targetTable['dbName']);
-
-		$stmt = $conn->query("SELECT * FROM {$targetTable['dbName']}");
-		$res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
-
-		$resFilename = tempnam('/tmp', 'db-wr-test-tmp');
-		$csv = new CsvFile($resFilename);
-		$csv->writeRow(["id", "name", "glasses"]);
-		foreach ($res as $row) {
-			$csv->writeRow($row);
-		}
-
-		$expectedFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_merged.csv";
-
-		$this->assertFileEquals($expectedFilename, $resFilename);
+		$this->assertEquals(Logger::INFO, $records[1]['level']);
+		$this->assertRegExp('/Connecting to DSN/ui', $records[1]['message']);
 	}
 }
