@@ -2,17 +2,12 @@
 namespace Keboola\DbWriter;
 
 use Keboola\DbWriter\Configuration\MySQLConfigDefinition;
-use Psr\Log\LoggerInterface;
 
 class MySQLApplication extends Application
 {
-	public function __construct(array $config, LoggerInterface $logger)
+	public function __construct(array $config, Logger $logger)
 	{
-		parent::__construct($config);
-
-		$this['logger'] = function() use ($logger) {
-			return $logger;
-		};
+		parent::__construct($config, $logger);
 
 		$this->setConfigDefinition(new MySQLConfigDefinition());
 	}

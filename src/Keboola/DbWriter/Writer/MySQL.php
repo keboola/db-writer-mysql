@@ -114,10 +114,10 @@ class MySQL extends Writer implements WriterInterface
 		return $pdo;
 	}
 
-	function write($sourceFilename, array $table)
+	function write(CsvFile $csv, array $table)
 	{
 		$query = "
-            LOAD DATA LOCAL INFILE '{$sourceFilename}'
+            LOAD DATA LOCAL INFILE '{$csv}'
             INTO TABLE {$this->escape($table['dbName'])}
             CHARACTER SET utf8
             FIELDS TERMINATED BY ','
@@ -358,5 +358,31 @@ class MySQL extends Writer implements WriterInterface
 	public function testConnection()
 	{
 		$this->db->query('SELECT NOW();')->execute();
+	}
+
+	public function tableExists($tableName)
+	{
+		$tableArr = explode('.', $tableName);
+		$tableName = isset($tableArr[1])?$tableArr[1]:$tableArr[0];
+		$tableName = str_replace(['[',']'], '', $tableName);
+		$stmt = $this->db->query(sprintf("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '%s'", $tableName));
+		$res = $stmt->fetchAll();
+		return !empty($res);
+	}
+
+	public function showTables($dbName)
+	{
+		$stmt = $this->db->query("SHOW TABLES");
+		$res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+		return array_map(function ($item) {
+			return array_shift($item);
+		}, $res);
+	}
+
+	public function getTableInfo($tableName)
+	{
+		$stmt = $this->db->query("DESCRIBE {$tableName}");
+		return $stmt->fetchAll(\PDO::FETCH_ASSOC);
 	}
 }

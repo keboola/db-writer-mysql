@@ -80,7 +80,7 @@ class MySQLSSHTest extends BaseTest
 
 		$this->writer->drop($outputTableName);
 		$this->writer->create($table);
-		$this->writer->write(realpath($sourceFilename), $table);
+		$this->writer->write(new CsvFile(realpath($sourceFilename)), $table);
 
 		$conn = $this->writer->getConnection();
 		$stmt = $conn->query("SELECT * FROM $outputTableName");
@@ -103,7 +103,7 @@ class MySQLSSHTest extends BaseTest
 
 		$this->writer->drop($outputTableName);
 		$this->writer->create($table);
-		$this->writer->write(realpath($sourceFilename), $table);
+		$this->writer->write(new CsvFile(realpath($sourceFilename)), $table);
 
 		$conn = $this->writer->getConnection();
 		$stmt = $conn->query("SELECT * FROM $outputTableName");
@@ -128,7 +128,7 @@ class MySQLSSHTest extends BaseTest
 
 		$this->writer->drop($outputTableName);
 		$this->writer->create($table);
-		$this->writer->write(realpath($sourceFilename), $table);
+		$this->writer->write(new CsvFile(realpath($sourceFilename)), $table);
 
 		$conn = $this->writer->getConnection();
 		$stmt = $conn->query("SELECT * FROM $outputTableName");

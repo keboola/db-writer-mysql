@@ -96,7 +96,7 @@ class MySQLTest extends BaseTest
 
 		$this->writer->drop($outputTableName);
 		$this->writer->create($table);
-		$this->writer->write(realpath($sourceFilename), $table);
+		$this->writer->write(new CsvFile(realpath($sourceFilename)), $table);
 
 		$conn = $this->writer->getConnection();
 		$stmt = $conn->query("SELECT * FROM $outputTableName");
@@ -119,7 +119,7 @@ class MySQLTest extends BaseTest
 
 		$this->writer->drop($outputTableName);
 		$this->writer->create($table);
-		$this->writer->write(realpath($sourceFilename), $table);
+		$this->writer->write(new CsvFile(realpath($sourceFilename)), $table);
 
 		$conn = $this->writer->getConnection();
 		$stmt = $conn->query("SELECT * FROM $outputTableName");
@@ -144,7 +144,7 @@ class MySQLTest extends BaseTest
 
 		$this->writer->drop($outputTableName);
 		$this->writer->create($table);
-		$this->writer->write(realpath($sourceFilename), $table);
+		$this->writer->write(new CsvFile(realpath($sourceFilename)), $table);
 
 		$conn = $this->writer->getConnection();
 		$stmt = $conn->query("SELECT * FROM $outputTableName");
@@ -193,12 +193,12 @@ class MySQLTest extends BaseTest
 
 		// first write
 		$this->writer->create($targetTable);
-		$this->writer->write($sourceFilename, $targetTable);
+		$this->writer->write(new CsvFile($sourceFilename), $targetTable);
 
 		// second write
 		$sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_increment.csv";
 		$this->writer->create($table);
-		$this->writer->write($sourceFilename, $table);
+		$this->writer->write(new CsvFile($sourceFilename), $table);
 		$this->writer->upsert($table, $targetTable['dbName']);
 
 		$stmt = $conn->query("SELECT * FROM {$targetTable['dbName']}");
