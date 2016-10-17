@@ -22,6 +22,10 @@ class MySQLTest extends BaseTest
 
 	public function setUp()
 	{
+		if (!defined('APP_NAME')) {
+			define('APP_NAME', 'wr-db-mysql');
+		}
+
 		$this->config = $this->getConfig(self::DRIVER);
 		$this->config['parameters']['writer_class'] = 'MySQL';
 		$this->writer = $this->getWriter($this->config['parameters']);
@@ -212,6 +216,48 @@ class MySQLTest extends BaseTest
 		}
 
 		$expectedFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_merged.csv";
+
+		$this->assertFileEquals($expectedFilename, $resFilename);
+	}
+
+	public function testReorderColumns()
+	{
+		$conn = $this->writer->getConnection();
+		$tables = $this->config['parameters']['tables'];
+
+		$table = $tables[0];
+		$table['items'] = array_reverse($table['items']);
+
+		$sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . ".csv";
+		$targetTable = $table;
+		$table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
+
+		// first write
+		$this->writer->create($targetTable);
+		$this->writer->write(new CsvFile($sourceFilename), $targetTable);
+
+		// second write
+		$sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_increment.csv";
+
+		$this->writer->create($table);
+		$this->writer->write(new CsvFile($sourceFilename), $table);
+		$this->writer->upsert($table, $targetTable['dbName']);
+
+
+		$expectedFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_merged.csv";
+		$expectedFile = new CsvFile($expectedFilename);
+		$header = $expectedFile->getHeader();
+
+
+		$stmt = $conn->query("SELECT " . implode(', ', $header) . " FROM {$targetTable['dbName']}");
+		$res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+		$resFilename = tempnam('/tmp', 'db-wr-test-tmp');
+		$csv = new CsvFile($resFilename);
+		$csv->writeRow($header);
+		foreach ($res as $row) {
+			$csv->writeRow($row);
+		}
 
 		$this->assertFileEquals($expectedFilename, $resFilename);
 	}
