@@ -128,11 +128,21 @@ class MySQL extends Writer implements WriterInterface
             ESCAPED BY ''
             IGNORE 1 LINES
             (" . implode(', ', array_map(function($column) use ($table) {
+				// skip ignored
 				foreach ($table['items'] AS $tableColumn) {
 					if ($tableColumn['name'] === $column && $tableColumn['type'] === 'IGNORE') {
 						return '@dummy';
 					}
 				}
+
+				// name by mapping
+				foreach ($table['items'] AS $tableColumn) {
+					if ($tableColumn['name'] === $column) {
+						return $this->escape($tableColumn['dbName']);
+					}
+				}
+
+				// origin sapi name
 				return $this->escape($column);
 			}, $header)) . ")
         ";
@@ -248,9 +258,13 @@ class MySQL extends Writer implements WriterInterface
 		$sourceTable = $this->escape($table['dbName']);
 		$targetTable = $this->escape($targetTable);
 
+		$columns = array_filter($table['items'], function($item) {
+			return $item['type'] !== 'IGNORE';
+		});
+
 		$columns = array_map(function($item) {
 			return $this->escape($item['dbName']);
-		}, $table['items']);
+		}, $columns);
 
 		if (!empty($table['primaryKey'])) {
 			// update data
@@ -277,6 +291,7 @@ class MySQL extends Writer implements WriterInterface
 			$query = "DELETE a FROM {$sourceTable} a
             INNER JOIN {$targetTable} b ON {$joinClause}
         ";
+
 			$this->db->exec($query);
 		}
 
