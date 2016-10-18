@@ -116,6 +116,9 @@ class MySQL extends Writer implements WriterInterface
 
 	function write(CsvFile $csv, array $table)
 	{
+		$header = $csv->getHeader();
+		$csv->rewind();
+
 		$query = "
             LOAD DATA LOCAL INFILE '{$csv}'
             INTO TABLE {$this->escape($table['dbName'])}
@@ -124,6 +127,24 @@ class MySQL extends Writer implements WriterInterface
             OPTIONALLY ENCLOSED BY '\"'
             ESCAPED BY ''
             IGNORE 1 LINES
+            (" . implode(', ', array_map(function($column) use ($table) {
+				// skip ignored
+				foreach ($table['items'] AS $tableColumn) {
+					if ($tableColumn['name'] === $column && $tableColumn['type'] === 'IGNORE') {
+						return '@dummy';
+					}
+				}
+
+				// name by mapping
+				foreach ($table['items'] AS $tableColumn) {
+					if ($tableColumn['name'] === $column) {
+						return $this->escape($tableColumn['dbName']);
+					}
+				}
+
+				// origin sapi name
+				return $this->escape($column);
+			}, $header)) . ")
         ";
 
 		try {
@@ -136,43 +157,6 @@ class MySQL extends Writer implements WriterInterface
 				'query' => $query
 			]);
 		}
-		return;
-		$csv = new CsvFile($sourceFilename);
-
-		// skip the header
-		$csv->next();
-		$csv->next();
-
-		$columnsCount = count($csv->current());
-		$rowsPerInsert = intval((1000 / $columnsCount) - 1);
-
-		$this->db->beginTransaction();
-
-		while ($csv->current() !== false) {
-
-			$sql = "INSERT INTO " . $this->escape($table['dbName']) . " VALUES ";
-
-			for ($i=0; $i<1 && $csv->current() !== false; $i++) {
-				$sql .= sprintf(
-					"(%s),",
-					implode(
-						',',
-						$this->encodeCsvRow(
-							$csv->current(),
-							$table['items']
-						)
-					)
-				);
-				$csv->next();
-			}
-			$sql = substr($sql, 0, -1);
-
-			echo sprintf("Executing query '%s'.", $sql);
-			echo PHP_EOL;
-			$this->db->exec($sql);
-		}
-
-		$this->db->commit();
 	}
 
 	private function encodeCsvRow($row, $columnDefinitions)
@@ -262,36 +246,6 @@ class MySQL extends Writer implements WriterInterface
 		$sql .= ") DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
 
 		$this->db->exec($sql);
-		return;
-		$sql = "create table {$this->escape($table['dbName'])} (";
-
-		$columns = $table['items'];
-		foreach ($columns as $k => $col) {
-
-			$type = strtolower($col['type']);
-			if ($type == 'ignore') {
-				continue;
-			}
-
-			if (!empty($col['size']) && in_array($type, self::$typesWithSize)) {
-				$type .= "({$col['size']})";
-			}
-
-			$null = empty($col['nullable']) ? 'NULL' : 'NOT NULL';
-
-			$default = empty($col['default']) ? '' : $col['default'];
-			if ($type == 'text') {
-				$default = '';
-			}
-
-			$sql .= "{$this->escape($col['dbName'])} $type $null $default";
-			$sql .= ',';
-		}
-
-		$sql = substr($sql, 0, -1);
-		$sql .= ");";
-
-		$this->db->exec($sql);
 	}
 
 	static function getAllowedTypes()
@@ -304,9 +258,13 @@ class MySQL extends Writer implements WriterInterface
 		$sourceTable = $this->escape($table['dbName']);
 		$targetTable = $this->escape($targetTable);
 
+		$columns = array_filter($table['items'], function($item) {
+			return $item['type'] !== 'IGNORE';
+		});
+
 		$columns = array_map(function($item) {
 			return $this->escape($item['dbName']);
-		}, $table['items']);
+		}, $columns);
 
 		if (!empty($table['primaryKey'])) {
 			// update data
@@ -333,6 +291,7 @@ class MySQL extends Writer implements WriterInterface
 			$query = "DELETE a FROM {$sourceTable} a
             INNER JOIN {$targetTable} b ON {$joinClause}
         ";
+
 			$this->db->exec($query);
 		}
 
