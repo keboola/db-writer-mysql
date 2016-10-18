@@ -30,6 +30,7 @@ class MySQLConfigDefinition extends ConfigDefinition
                     ->cannotBeEmpty()
                 ->end()
                 ->arrayNode('db')
+                    ->isRequired()
                     ->children()
                         ->scalarNode('host')->end()
                         ->scalarNode('port')->end()
