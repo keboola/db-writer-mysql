@@ -20,4 +20,4 @@ RUN curl --location --silent --show-error --fail \
         > /usr/local/bin/waitforservices && \
     chmod +x /usr/local/bin/waitforservices
 
-ENTRYPOINT php ./src/run.php --data=/data
+ENTRYPOINT php ./run.php --data=/data
