@@ -127,7 +127,14 @@ class MySQL extends Writer implements WriterInterface
             OPTIONALLY ENCLOSED BY '\"'
             ESCAPED BY ''
             IGNORE 1 LINES
-            (" . implode(', ', array_map(function($column) { return $this->escape($column); }, $header)) . ")
+            (" . implode(', ', array_map(function($column) use ($table) {
+				foreach ($table['items'] AS $tableColumn) {
+					if ($tableColumn['name'] === $column && $tableColumn['type'] === 'IGNORE') {
+						return '@dummy';
+					}
+				}
+				return $this->escape($column);
+			}, $header)) . ")
         ";
 
 		try {
