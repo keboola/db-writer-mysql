@@ -7,8 +7,6 @@ class MySQLApplication extends Application
 {
 	public function __construct(array $config, Logger $logger)
 	{
-		parent::__construct($config, $logger);
-
-		$this->setConfigDefinition(new MySQLConfigDefinition());
+		parent::__construct($config, $logger, new MySQLConfigDefinition());
 	}
 }
