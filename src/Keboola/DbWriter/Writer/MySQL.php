@@ -56,8 +56,12 @@ class MySQL extends Writer implements WriterInterface
 			}
 		}
 
+		if (!isset($dbParams['password']) && isset($dbParams['#password'])) {
+			$dbParams['password'] = $dbParams['#password'];
+		}
+
 		// check params
-		foreach (['host', 'database', 'user', '#password'] as $r) {
+		foreach (['host', 'database', 'user', 'password'] as $r) {
 			if (!isset($dbParams[$r])) {
 				throw new UserException(sprintf("Parameter %s is missing.", $r));
 			}
@@ -97,7 +101,7 @@ class MySQL extends Writer implements WriterInterface
 
 		$this->logger->info("Connecting to DSN '" . $dsn . "' " . ($isSsl ? 'Using SSL' : ''));
 
-		$pdo = new \PDO($dsn, $dbParams['user'], $dbParams['#password'], $options);
+		$pdo = new \PDO($dsn, $dbParams['user'], $dbParams['password'], $options);
 		$pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
 		$pdo->exec("SET NAMES utf8;");
 
