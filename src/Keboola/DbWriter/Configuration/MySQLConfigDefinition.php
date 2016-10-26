@@ -32,6 +32,7 @@ class MySQLConfigDefinition extends ConfigDefinition
                 ->arrayNode('db')
                     ->isRequired()
                     ->children()
+                        ->scalarNode('driver')->end()
                         ->scalarNode('host')->end()
                         ->scalarNode('port')->end()
                         ->scalarNode('database')
