@@ -3,9 +3,10 @@
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
+use Keboola\DbWriter\Application;
 use Symfony\Component\Yaml\Yaml;
 use Monolog\Handler\NullHandler;
-use Keboola\DbWriter\MySQLApplication;
+use Keboola\DbWriter\Configuration\MySQLConfigDefinition;
 
 define('APP_NAME', 'wr-db-mysql');
 define('ROOT_PATH', __DIR__);
@@ -31,8 +32,13 @@ try {
         $logger->setHandlers(array(new NullHandler(Logger::INFO)));
     }
 
-    $app = new MySQLApplication($config, $logger);
-    echo json_encode($app->run());
+    $app = new Application($config, $logger, new MySQLConfigDefinition());
+    $result = $app->run();
+
+    echo json_encode($result);
+
+    $logger->info("MySQL Writer finished successfully.");
+    exit(0);
 } catch(UserException $e) {
     $logger->log('error', $e->getMessage(), (array) $e->getData());
 
