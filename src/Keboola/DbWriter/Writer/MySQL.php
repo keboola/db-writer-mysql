@@ -157,43 +157,10 @@ class MySQL extends Writer implements WriterInterface
 			throw $e;
 			//@FIXME userexception
 
-			throw new UserException("Query failed: " . $e->getMessage(), $e, [
+			throw new UserException("Query failed: " . $e->getMessage(), 400, $e, [
 				'query' => $query
 			]);
 		}
-	}
-
-	private function encodeCsvRow($row, $columnDefinitions)
-	{
-		$res = [];
-		foreach ($row as $k => $v) {
-			if (strtolower($columnDefinitions[$k]['type']) == 'ignore') {
-				continue;
-			}
-			$decider = $this->getEncodingDecider($columnDefinitions[$k]['type']);
-			$res[$k] = $decider($v);
-		}
-
-		return $res;
-	}
-
-	private function getEncodingDecider($type)
-	{
-		return function ($data) use ($type) {
-			if (strtolower($data) === 'null') {
-				return $data;
-			}
-
-			if (in_array(strtolower($type), self::$numericTypes) && empty($data)) {
-				return 0;
-			}
-
-			if (!in_array(strtolower($type), self::$numericTypes)) {
-				$data = "'" . $data . "'";
-			}
-
-			return $data;
-		};
 	}
 
 	function isTableValid(array $table, $ignoreExport = false)
@@ -205,23 +172,17 @@ class MySQL extends Writer implements WriterInterface
 
 	function drop($tableName)
 	{
-		$this->db->exec("DROP TABLE IF EXISTS `{$tableName}`;");
+		$this->db->exec(sprintf("DROP TABLE IF EXISTS %s;", $this->escape($tableName)));
 	}
 
 	private function escape($obj)
 	{
-		$objNameArr = explode('.', $obj);
-
-		if (count($objNameArr) > 1) {
-			return $objNameArr[0] . ".`" . $objNameArr[1] . "`";
-		}
-
-		return "`" . $objNameArr[0] . "`";
+		return "`{$obj}`";
 	}
 
 	function create(array $table)
 	{
-		$sql = "CREATE TABLE `{$table['dbName']}` (";
+		$sql = "CREATE TABLE " . $this->escape($table['dbName']) . " (";
 
 		$columns = $table['items'];
 		foreach ($columns as $k => $col) {
@@ -242,7 +203,7 @@ class MySQL extends Writer implements WriterInterface
 				$default = '';
 			}
 
-			$sql .= "`{$col['dbName']}` $type $null $default";
+			$sql .= $this->escape($col['dbName']) . " $type $null $default";
 			$sql .= ',';
 		}
 
@@ -325,17 +286,16 @@ class MySQL extends Writer implements WriterInterface
 
 	public function tableExists($tableName)
 	{
-		$tableArr = explode('.', $tableName);
-		$tableName = isset($tableArr[1])?$tableArr[1]:$tableArr[0];
-		$tableName = str_replace(['[',']'], '', $tableName);
-		$stmt = $this->db->query(sprintf("SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = '%s'", $tableName));
+		$stmt = $this->db->prepare('SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?;');
+		$stmt->execute([$tableName]);
+
 		$res = $stmt->fetchAll();
 		return !empty($res);
 	}
 
 	public function showTables($dbName)
 	{
-		$stmt = $this->db->query("SHOW TABLES");
+		$stmt = $this->db->query("SHOW TABLES;");
 		$res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
 		return array_map(function ($item) {
@@ -345,7 +305,7 @@ class MySQL extends Writer implements WriterInterface
 
 	public function getTableInfo($tableName)
 	{
-		$stmt = $this->db->query("DESCRIBE {$tableName}");
+		$stmt = $this->db->query(sprintf("DESCRIBE %s;", $this->escape($tableName)));
 		return $stmt->fetchAll(\PDO::FETCH_ASSOC);
 	}
 }
