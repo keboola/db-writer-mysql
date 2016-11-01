@@ -220,9 +220,6 @@ class MySQL extends Writer implements WriterInterface
 
 	public function upsert(array $table, $targetTable)
 	{
-		$sourceTable = $this->escape($table['dbName']);
-		$targetTable = $this->escape($targetTable);
-
 		$columns = array_filter($table['items'], function($item) {
 			return $item['type'] !== 'IGNORE';
 		});
@@ -245,16 +242,16 @@ class MySQL extends Writer implements WriterInterface
 			}
 			$valuesClause = implode(',', $valuesClauseArr);
 
-			$query = "UPDATE {$targetTable} a
-			INNER JOIN {$sourceTable} b ON {$joinClause}
+			$query = "UPDATE {$this->escape($targetTable)} a
+			INNER JOIN {$this->escape($table['dbName'])} b ON {$joinClause}
             SET {$valuesClause}
         ";
 
 			$this->db->exec($query);
 
 			// delete updated from temp table
-			$query = "DELETE a FROM {$sourceTable} a
-            INNER JOIN {$targetTable} b ON {$joinClause}
+			$query = "DELETE a FROM {$this->escape($table['dbName'])} a
+            INNER JOIN {$this->escape($targetTable)} b ON {$joinClause}
         ";
 
 			$this->db->exec($query);
@@ -263,8 +260,12 @@ class MySQL extends Writer implements WriterInterface
 		$columnsClause = implode(',', $columns);
 
 		// insert new data
-		$query = "INSERT INTO {$targetTable} ({$columnsClause}) SELECT * FROM {$sourceTable}";
+		$query = "INSERT INTO {$this->escape($targetTable)} ({$columnsClause})
+		SELECT * FROM {$this->escape($table['dbName'])}";
 		$this->db->exec($query);
+
+		// drop temp table
+		$this->drop($table['dbName']);
 	}
 
 	/**
