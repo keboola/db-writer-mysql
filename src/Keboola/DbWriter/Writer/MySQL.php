@@ -207,6 +207,22 @@ class MySQL extends Writer implements WriterInterface
 			$sql .= ',';
 		}
 
+		if (!empty($table['primaryKey'])) {
+			$writer = $this;
+			$sql .= "PRIMARY KEY (" . implode(
+				', ',
+				array_map(
+					function($primaryColumn) use ($writer) {
+						return $writer->escape($primaryColumn);
+					},
+					$table['primaryKey']
+				)
+			) . ")";
+
+			$sql .= ',';
+		}
+
+
 		$sql = substr($sql, 0, -1);
 		$sql .= ") DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
 
