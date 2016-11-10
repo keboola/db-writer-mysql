@@ -349,4 +349,33 @@ class MySQLTest extends BaseTest
 
 		$this->assertFileEquals($tmpExpectedFilename, $resFilename);
 	}
+
+
+	public function testGenerateTmpName()
+	{
+		$tables = $this->config['parameters']['tables'];
+
+		$table = $tables[0];
+
+		$tableName = 'firstTable';
+
+		$tmpName = $this->writer->generateTmpName($tableName);
+		$this->assertRegExp('/' . $tableName . '/ui', $tmpName);
+		$this->assertRegExp('/temp/ui', $tmpName);
+		$this->assertLessThanOrEqual(64, mb_strlen($tmpName));
+
+		$table['dbName'] = $tableName;
+		$this->writer->drop($tableName);
+		$this->writer->create($table);
+
+		$tableName = str_repeat('firstTableWithLongName', 6);
+
+		$tmpName = $this->writer->generateTmpName($tableName);
+		$this->assertRegExp('/temp/ui', $tmpName);
+		$this->assertLessThanOrEqual(64, mb_strlen($tmpName));
+
+		$table['dbName'] = $tmpName;
+		$this->writer->drop($tmpName);
+		$this->writer->create($table);
+	}
 }

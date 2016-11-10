@@ -40,6 +40,12 @@ class MySQL extends Writer implements WriterInterface
 
 	private $batched = true;
 
+	public function generateTmpName($tableName)
+	{
+		$tmpId = '_temp_' . uniqid();
+		return mb_substr($tableName, 0, 30 - mb_strlen($tmpId)) . $tmpId;
+	}
+
 	public function createConnection($dbParams)
 	{
 		$isSsl = false;
