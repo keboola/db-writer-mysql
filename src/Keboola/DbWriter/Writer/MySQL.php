@@ -160,9 +160,6 @@ class MySQL extends Writer implements WriterInterface
 		try {
 			$this->db->exec($query);
 		} catch (\PDOException $e) {
-			throw $e;
-			//@FIXME userexception
-
 			throw new UserException("Query failed: " . $e->getMessage(), 400, $e, [
 				'query' => $query
 			]);
