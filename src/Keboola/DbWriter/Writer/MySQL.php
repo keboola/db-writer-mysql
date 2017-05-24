@@ -326,7 +326,7 @@ class MySQL extends Writer implements WriterInterface
 	public function getTableInfo($tableName)
 	{
 		$stmt = $this->db->query(sprintf("DESCRIBE %s;", $this->escape($tableName)));
-		return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+		return ['columns' => $stmt->fetchAll(\PDO::FETCH_ASSOC)];
 	}
 
 	public function checkTargetTable($table)
