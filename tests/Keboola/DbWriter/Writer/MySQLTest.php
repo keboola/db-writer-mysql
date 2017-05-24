@@ -378,4 +378,42 @@ class MySQLTest extends BaseTest
 		$this->writer->drop($tmpName);
 		$this->writer->create($table);
 	}
+
+	public function testCheckTargetTable()
+	{
+		$tables = $this->config['parameters']['tables'];
+		$table = $tables[0];
+		$this->writer->create($table);
+		$this->writer->checkTargetTable($table);
+	}
+
+	public function testCheckTargetTableColumnNotFound()
+	{
+		$this->setExpectedException(
+			'Keboola\DbWriter\Exception\UserException',
+			"Column 'age' not found in destination table 'simple'"
+		);
+		$tables = $this->config['parameters']['tables'];
+		$table = $tables[0];
+		$this->writer->create($table);
+		$table['items'][] = [
+			'name' => 'age',
+			'dbName' => 'age',
+			'type' => 'int'
+		];
+		$this->writer->checkTargetTable($table);
+	}
+
+	public function testCheckTargetTableDataTypeMismatch()
+	{
+		$this->setExpectedException(
+			'Keboola\DbWriter\Exception\UserException',
+			"Data type mismatch. Column 'glasses' is of type 'int' in writer, but is 'varchar' in destination table 'simple'"
+		);
+		$tables = $this->config['parameters']['tables'];
+		$table = $tables[0];
+		$this->writer->create($table);
+		$table['items'][2]['type'] = 'int';
+		$this->writer->checkTargetTable($table);
+	}
 }

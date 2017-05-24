@@ -328,4 +328,51 @@ class MySQL extends Writer implements WriterInterface
 		$stmt = $this->db->query(sprintf("DESCRIBE %s;", $this->escape($tableName)));
 		return $stmt->fetchAll(\PDO::FETCH_ASSOC);
 	}
+
+	public function checkTargetTable($table)
+	{
+		if (!$this->tableExists($table['dbName'])) {
+			return false;
+		}
+
+		$dbColumns = $this->getTableInfo($table['dbName'])['columns'];
+
+		foreach ($table['items'] as $column) {
+			$exists = false;
+			$targetDataType = null;
+			foreach ($dbColumns as $dbColumn) {
+				$exists = ($dbColumn['Field'] == $column['dbName']);
+				if ($exists) {
+					$matches = [];
+					if (preg_match('/^(.+)\([0-9]+\)$/ui', $dbColumn['Type'], $matches)) {
+						$targetDataType = $matches[1];
+					} else {
+						$targetDataType = $dbColumn['Type'];
+					}
+
+					break;
+				}
+			}
+
+			if (!$exists) {
+				throw new UserException(sprintf(
+					'Column \'%s\' not found in destination table \'%s\'',
+					$column['dbName'],
+					$table['dbName']
+				));
+			}
+
+			if ($targetDataType !== strtolower($column['type'])) {
+				throw new UserException(sprintf(
+					'Data type mismatch. Column \'%s\' is of type \'%s\' in writer, but is \'%s\' in destination table \'%s\'',
+					$column['dbName'],
+					$column['type'],
+					$targetDataType,
+					$table['dbName']
+				));
+			}
+		}
+
+		return true;
+	}
 }
