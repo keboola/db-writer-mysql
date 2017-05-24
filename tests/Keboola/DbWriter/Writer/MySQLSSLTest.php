@@ -1,8 +1,8 @@
 <?php
 namespace Keboola\DbWriter\Writer;
 
-use Keboola\DbWriter\Application;
-use Keboola\DbWriter\Configuration\MySQLConfigDefinition;
+use Keboola\DbWriter\MySQL\Application;
+use Keboola\DbWriter\MySQL\Configuration\ConfigDefinition;
 use Keboola\DbWriter\Test\BaseTest;
 use Keboola\DbWriter\Logger;
 
@@ -74,7 +74,7 @@ class MySQLSSLTest extends BaseTest
 		unset($this->config['parameters']['tables']);
 
 
-		$app = new Application($this->config, new Logger(APP_NAME), new MySQLConfigDefinition());
+		$app = new Application($this->config, new Logger(APP_NAME), new ConfigDefinition());
 
 		$response = $app->run();
 

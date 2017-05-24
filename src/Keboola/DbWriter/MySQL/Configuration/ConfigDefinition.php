@@ -3,11 +3,11 @@
  * @package ex-db-mysql
  * @author Erik Zigo <erik.zigo@keboola.com>
  */
-namespace Keboola\DbWriter\Configuration;
+namespace Keboola\DbWriter\MySQL\Configuration;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 
-class MySQLConfigDefinition extends ConfigDefinition
+class ConfigDefinition extends \Keboola\DbWriter\Configuration\ConfigDefinition
 {
     /**
      * Generates the configuration tree builder.
