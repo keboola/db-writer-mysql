@@ -1,5 +1,6 @@
 app:
   build: .
+  image: keboola/db-writer-mysql
   volumes:
     - .:/code
   working_dir: /code
