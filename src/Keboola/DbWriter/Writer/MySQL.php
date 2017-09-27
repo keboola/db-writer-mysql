@@ -99,7 +99,7 @@ class MySQL extends Writer implements WriterInterface
 		$port = isset($dbParams['port']) ? $dbParams['port'] : '3306';
 
 		$dsn = sprintf(
-			"mysql:host=%s;port=%s;dbname=%s;charset=utf8",
+			"mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4",
 			$dbParams['host'],
 			$port,
 			$dbParams['database']
@@ -109,7 +109,7 @@ class MySQL extends Writer implements WriterInterface
 
 		$pdo = new \PDO($dsn, $dbParams['user'], $dbParams['password'], $options);
 		$pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
-		$pdo->exec("SET NAMES utf8;");
+		$pdo->exec("SET NAMES utf8mb4;");
 
 		if ($isSsl) {
 			$status = $pdo->query("SHOW STATUS LIKE 'Ssl_cipher';")->fetch(\PDO::FETCH_ASSOC);
@@ -132,7 +132,7 @@ class MySQL extends Writer implements WriterInterface
 		$query = "
             LOAD DATA LOCAL INFILE '{$csv}'
             INTO TABLE {$this->escape($table['dbName'])}
-            CHARACTER SET utf8
+            CHARACTER SET utf8mb4
             FIELDS TERMINATED BY ','
             OPTIONALLY ENCLOSED BY '\"'
             ESCAPED BY ''
@@ -227,7 +227,7 @@ class MySQL extends Writer implements WriterInterface
 
 
 		$sql = substr($sql, 0, -1);
-		$sql .= ") DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;";
+		$sql .= ") DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_unicode_ci";
 
 		$this->db->exec($sql);
 	}
