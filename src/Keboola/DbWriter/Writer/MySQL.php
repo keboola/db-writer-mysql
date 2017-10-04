@@ -114,6 +114,7 @@ class MySQL extends Writer implements WriterInterface
 			$pdo->exec("SET NAMES $this->charset;");
 		} catch (\PDOException $e) {
 			$this->charset = 'utf8';
+			echo 'Falling back to ' . $this->charset . ' charset' . "\n";
 			$pdo->exec("SET NAMES $this->charset;");
 		}
 
