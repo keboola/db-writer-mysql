@@ -100,7 +100,7 @@ class MySQL extends Writer implements WriterInterface
 		$port = isset($dbParams['port']) ? $dbParams['port'] : '3306';
 
 		$dsn = sprintf(
-			"mysql:host=%s;port=%s;dbname=%s;charset=$this->charset",
+			"mysql:host=%s;port=%s;dbname=%s",
 			$dbParams['host'],
 			$port,
 			$dbParams['database']
@@ -110,7 +110,12 @@ class MySQL extends Writer implements WriterInterface
 
 		$pdo = new \PDO($dsn, $dbParams['user'], $dbParams['password'], $options);
 		$pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
-		$pdo->exec("SET NAMES $this->charset;");
+		try {
+			$pdo->exec("SET NAMES $this->charset;");
+		} catch (\PDOException $e) {
+			$this->charset = 'utf8';
+			$pdo->exec("SET NAMES $this->charset;");
+		}
 
 		if ($isSsl) {
 			$status = $pdo->query("SHOW STATUS LIKE 'Ssl_cipher';")->fetch(\PDO::FETCH_ASSOC);
