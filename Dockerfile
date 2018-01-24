@@ -1,23 +1,26 @@
-FROM quay.io/keboola/docker-base-php56:0.0.2
-MAINTAINER Erik Zigo <erik.zigo@keboola.com>
+FROM php:5.6
+MAINTAINER Miroslav Cillik <miro@keboola.com>
 
-# Install required tools
-RUN yum install -y wget
-RUN yum install -y tar
-RUN yum install -y openssl
-RUN yum -y --enablerepo=epel,remi,remi-php56 install php-devel
-RUN yum -y --enablerepo=epel,remi,remi-php56 install php-pear
-RUN yum -y --enablerepo=epel,remi,remi-php56 install php-mysql
+# Deps
+RUN apt-get update
+RUN apt-get install -y wget curl make git bzip2 time libzip-dev openssl
+
+# PHP
+RUN docker-php-ext-install pdo pdo_mysql
 
 WORKDIR /home
 
-# Initialize
-COPY . /home/
-RUN composer install --no-interaction
+# Composer
+WORKDIR /root
+RUN cd \
+  && curl -sS https://getcomposer.org/installer | php \
+  && ln -s /root/composer.phar /usr/local/bin/composer
 
-RUN curl --location --silent --show-error --fail \
-        https://github.com/Barzahlen/waitforservices/releases/download/v0.3/waitforservices \
-        > /usr/local/bin/waitforservices && \
-    chmod +x /usr/local/bin/waitforservices
+# Main
+ADD . /code
+WORKDIR /code
+RUN echo "memory_limit = -1" >> /usr/local/etc/php/php.ini
+RUN echo "date.timezone = \"Europe/Prague\"" >> /usr/local/etc/php/php.ini
+RUN composer selfupdate && composer install --no-interaction
 
-ENTRYPOINT php ./run.php --data=/data
+CMD php ./run.php --data=/data
