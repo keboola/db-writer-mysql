@@ -88,6 +88,32 @@ class MySQLTest extends BaseTest
 		$this->assertTrue($tableExits);
 	}
 
+    public function testCreateDefaultValue()
+    {
+        $tables = $this->config['parameters']['tables'];
+        $tables[0]['items'][2]['nullable'] = true;
+        $tables[0]['items'][2]['default'] = 'dioptric.big';
+
+        foreach ($tables as $table) {
+            $this->writer->create($table);
+        }
+
+        /** @var \PDO $conn */
+        $conn = $this->writer->getConnection();
+        $stmt = $conn->query("SELECT Distinct TABLE_NAME FROM information_schema.TABLES");
+        $res = $stmt->fetchAll();
+
+        $tableExits = false;
+        foreach ($res as $r) {
+            if ($r['TABLE_NAME'] == $tables[0]['dbName']) {
+                $tableExits = true;
+                break;
+            }
+        }
+
+        $this->assertTrue($tableExits);
+    }
+
 	public function testWriteMysql()
 	{
 		$tables = $this->config['parameters']['tables'];
@@ -172,6 +198,36 @@ class MySQLTest extends BaseTest
 
 		$this->assertEquals($srcArr, $resArr);
 	}
+
+    public function testWriteDefaultValue()
+    {
+        $tables = $this->config['parameters']['tables'];
+
+        // simple table
+        $table = $tables[0];
+        $sourceTableId = $table['tableId'];
+        $outputTableName = $table['dbName'];
+        $sourceFilename = $this->dataDir . "/mysql/" . $sourceTableId . "_default.csv";
+
+        $this->writer->drop($outputTableName);
+        $this->writer->create($table);
+        $this->writer->write(new CsvFile(realpath($sourceFilename)), $table);
+
+        $conn = $this->writer->getConnection();
+        $stmt = $conn->query("SELECT * FROM $outputTableName");
+        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
+        $csv = new CsvFile($resFilename);
+        $csv->writeRow(["id","name","glasses"]);
+        foreach ($res as $row) {
+            $csv->writeRow($row);
+        }
+
+        $expected = $this->dataDir . "/mysql/" . $sourceTableId . ".csv";
+
+        $this->assertFileEquals($expected, $resFilename);
+    }
 
 	public function testGetAllowedTypes()
 	{

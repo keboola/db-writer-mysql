@@ -2,6 +2,7 @@
 namespace Keboola\DbWriter\Writer;
 
 use Keboola\DbWriter\Test\BaseTest;
+use Symfony\Component\Process\Process;
 use Symfony\Component\Yaml\Yaml;
 
 class MySQLEntrypointTest extends BaseTest
@@ -28,9 +29,10 @@ class MySQLEntrypointTest extends BaseTest
 		}
 
 		// run entrypoint
-		$lastOutput = exec('php ' . $rootPath . 'run.php --data=' . $rootPath . 'tests/data/runAction 2>&1', $output, $returnCode);
+        $process = new Process('php ' . $rootPath . 'run.php --data=' . $rootPath . 'tests/data/runAction 2>&1');
+		$exitCode = $process->run();
 
-		$this->assertEquals(0, $returnCode);
+		$this->assertEquals(0, $exitCode, $process->getOutput());
 
 	}
 

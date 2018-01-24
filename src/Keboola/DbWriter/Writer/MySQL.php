@@ -134,35 +134,20 @@ class MySQL extends Writer implements WriterInterface
 	function write(CsvFile $csv, array $table)
 	{
 		$header = $csv->getHeader();
+        $columnNames = $this->columnNamesForLoad($table, $header);
 		$csv->rewind();
 
 		$query = "
             LOAD DATA LOCAL INFILE '{$csv}'
             INTO TABLE {$this->escape($table['dbName'])}
             CHARACTER SET $this->charset
-            FIELDS TERMINATED BY ','
+            FIELDS TERMINATED BY ','            
             OPTIONALLY ENCLOSED BY '\"'
             ESCAPED BY ''
             IGNORE 1 LINES
-            (" . implode(', ', array_map(function($column) use ($table) {
-				// skip ignored
-				foreach ($table['items'] AS $tableColumn) {
-					if ($tableColumn['name'] === $column && $tableColumn['type'] === 'IGNORE') {
-						return '@dummy';
-					}
-				}
-
-				// name by mapping
-				foreach ($table['items'] AS $tableColumn) {
-					if ($tableColumn['name'] === $column) {
-						return $this->escape($tableColumn['dbName']);
-					}
-				}
-
-				// origin sapi name
-				return $this->escape($column);
-			}, $header)) . ")
-        ";
+            (". implode(', ', $columnNames) . ")
+            " . $this->emptyToDefault($table)
+        ;
 
 		try {
 			$this->db->exec($query);
@@ -172,6 +157,50 @@ class MySQL extends Writer implements WriterInterface
 			]);
 		}
 	}
+
+	protected function emptyToDefault($table)
+    {
+        $defaultCols = array_filter($table['items'], function($column) {
+            return !empty($column['default']) && strtolower($column['type']) !== 'ignore';
+        });
+
+        if (empty($defaultCols)) {
+            return '';
+        }
+
+        $defaultExpression = array_map(function($column) {
+            return sprintf(
+                "%s = IF(%s = '', '%s', %s)",
+                $this->escape($column['dbName']),
+                $this->escape($column['dbName']),
+                $column['default'],
+                $this->escape($column['dbName'])
+            );
+        }, $defaultCols);
+        return 'SET ' . implode(',', $defaultExpression);
+    }
+
+	protected function columnNamesForLoad($table, $header)
+    {
+        return array_map(function($column) use ($table) {
+            // skip ignored
+            foreach ($table['items'] as $tableColumn) {
+                if ($tableColumn['name'] === $column && $tableColumn['type'] === 'IGNORE') {
+                    return '@dummy';
+                }
+            }
+
+            // name by mapping
+            foreach ($table['items'] as $tableColumn) {
+                if ($tableColumn['name'] === $column) {
+                    return $this->escape($tableColumn['dbName']);
+                }
+            }
+
+            // origin sapi name
+            return $this->escape($column);
+        }, $header);
+    }
 
 	function isTableValid(array $table, $ignoreExport = false)
 	{
@@ -208,7 +237,7 @@ class MySQL extends Writer implements WriterInterface
 
 			$null = $col['nullable'] ? 'NULL' : 'NOT NULL';
 
-			$default = empty($col['default']) ? '' : $col['default'];
+			$default = empty($col['default']) ? '' : "DEFAULT '" . $col['default'] . "'";
 			if ($type == 'TEXT') {
 				$default = '';
 			}
