@@ -3,12 +3,26 @@ services:
   dev:
     build: .
     image: keboola/db-writer-mysql
+    command: bash
     volumes:
       - .:/code
     working_dir: /code
-    command: "./phpunit.sh"
-    tty: true
-    stdin_open: true
+    environment:
+      MYSQL_DB_HOST: mysql
+      MYSQL_DB_USER: root
+      MYSQL_DB_PASSWORD: rootpassword
+      MYSQL_DB_DATABASE: test
+    links:
+      - mysql
+      - sshproxy
+
+  tests:
+    build: .
+    image: keboola/db-writer-mysql
+    command: composer ci
+    volumes:
+      - .:/code
+    working_dir: /code
     environment:
       MYSQL_DB_HOST: mysql
       MYSQL_DB_USER: root
