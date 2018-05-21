@@ -4,7 +4,6 @@ namespace Keboola\DbWriter\Tests\Writer;
 
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Logger;
-use Keboola\DbWriter\Test\BaseTest;
 use Keboola\DbWriter\Test\MySQLBaseTest;
 use Keboola\DbWriter\Writer\MySQL;
 use Keboola\DbWriter\WriterFactory;
@@ -16,6 +15,8 @@ class MySQLSSHTest extends MySQLBaseTest
     private $writer;
 
     private $config;
+
+    protected $dataDir = __DIR__ . '../../data';
 
     /** @var TestHandler */
     private $testHandler;
@@ -100,7 +101,7 @@ class MySQLSSHTest extends MySQLBaseTest
         $table = $tables[0];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . '/' . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . "/mysql/" . $sourceTableId . ".csv";
 
         $table['items'][2]['type'] = 'IGNORE';
 
