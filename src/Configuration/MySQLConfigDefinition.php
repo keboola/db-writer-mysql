@@ -1,8 +1,5 @@
 <?php
-/**
- * @package ex-db-mysql
- * @author Erik Zigo <erik.zigo@keboola.com>
- */
+
 namespace Keboola\DbWriter\Configuration;
 
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
@@ -45,7 +42,7 @@ class MySQLConfigDefinition extends ConfigDefinition
                         ->scalarNode('password')->end()
                         ->scalarNode('#password')->end()
                         ->append($this->addSshNode())
-						->append($this->addSslNode())
+                        ->append($this->addSslNode())
                     ->end()
                 ->end()
                 ->arrayNode('tables')
@@ -129,21 +126,21 @@ class MySQLConfigDefinition extends ConfigDefinition
         return $node;
     }
 
-	public function addSslNode()
-	{
-		$builder = new TreeBuilder();
-		$node = $builder->root('ssl');
+    public function addSslNode()
+    {
+        $builder = new TreeBuilder();
+        $node = $builder->root('ssl');
 
-		$node
-			->children()
-				->booleanNode('enabled')->end()
-				->scalarNode('ca')->end()
-				->scalarNode('cert')->end()
-				->scalarNode('key')->end()
-				->scalarNode('cipher')->end()
-			->end()
-		;
+        $node
+            ->children()
+                ->booleanNode('enabled')->end()
+                ->scalarNode('ca')->end()
+                ->scalarNode('cert')->end()
+                ->scalarNode('key')->end()
+                ->scalarNode('cipher')->end()
+            ->end()
+        ;
 
-		return $node;
-	}
+        return $node;
+    }
 }

@@ -6,14 +6,10 @@ use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Application;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
-use Symfony\Component\Yaml\Yaml;
 use Monolog\Handler\NullHandler;
 use Keboola\DbWriter\Configuration\MySQLConfigDefinition;
 
-define('APP_NAME', 'wr-db-mysql');
-define('ROOT_PATH', __DIR__);
-
-require_once(dirname(__FILE__) . "/vendor/keboola/db-writer-common/bootstrap.php");
+require_once(dirname(__FILE__) . "/vendor/autoload.php");
 
 $criticalHandler = new StreamHandler('php://stderr');
 $criticalHandler->setBubble(false);
@@ -27,9 +23,9 @@ $logHandler = new StreamHandler('php://stdout');
 $logHandler->setBubble(false);
 $logHandler->setLevel(Logger::INFO);
 $logHandler->setFormatter(new LineFormatter("%message%\n"));
-
-$logger = new Logger(APP_NAME);
+$logger = new Logger('wr-db-mysql');
 $logger->setHandlers([$criticalHandler, $errorHandler, $logHandler]);
+
 $action = 'run';
 
 try {
@@ -37,7 +33,7 @@ try {
     if (!isset($arguments["data"])) {
         throw new UserException('Data folder not set.');
     }
-    $config = Yaml::parse(file_get_contents($arguments["data"] . "/config.yml"));
+    $config = json_decode(file_get_contents($arguments["data"] . "/config.json"), true);
     $config['parameters']['data_dir'] = $arguments['data'];
     $config['parameters']['writer_class'] = 'MySQL';
 
@@ -87,4 +83,3 @@ try {
     );
     exit(2);
 }
-exit(0);
