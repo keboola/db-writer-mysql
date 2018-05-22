@@ -32,19 +32,14 @@ services:
       - mysql
       - sshproxy
 
-  tests:
-    build: .
-    image: keboola/db-writer-mysql
-    working_dir: /code
-    command: "./phpunit.sh"
-    environment:
-      MYSQL_DB_HOST: mysql
-      MYSQL_DB_USER: root
-      MYSQL_DB_PASSWORD: rootpassword
-      MYSQL_DB_DATABASE: test
-    links:
-      - mysql
+  wait:
+    image: waisbrot/wait
+    depends_on:
+      - mssql
       - sshproxy
+    environment:
+      - TARGETS=mysql:3306,sshproxy:22
+      - TIMEOUT=120
 
   mysql:
     image: mysql:5.7
