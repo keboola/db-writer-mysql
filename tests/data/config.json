@@ -12,7 +12,7 @@
                 "tableId": "simple",
                 "dbName": "simple",
                 "export": true,
-                "incremental": false,
+                "incremental": true,
                 "primaryKey": ["id"],
                 "items": [
                     {
@@ -36,8 +36,8 @@
                         "dbName": "glasses",
                         "type": "varchar",
                         "size": 255,
-                        "nullable": null,
-                        "default": null
+                        "nullable": true,
+                        "default": "no"
                     }
                 ]
             },
@@ -50,9 +50,9 @@
                         "name": "col1",
                         "dbName": "col1",
                         "type": "varchar",
-                        "size": 255
-                        "nullable":
-                        "default":
+                        "size": 255,
+                        "nullable": null,
+                        "default": null
                     },
                     {
                         "name": "col2",

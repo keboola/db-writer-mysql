@@ -5,20 +5,17 @@ namespace Keboola\DbWriter\Tests\Writer;
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Test\BaseTest;
+use Keboola\DbWriter\Test\MySQLBaseTest;
 use Keboola\DbWriter\Writer\MySQL;
 use Keboola\DbWriter\WriterFactory;
 use Monolog\Handler\TestHandler;
 
-class MySQLSSHTest extends BaseTest
+class MySQLSSHTest extends MySQLBaseTest
 {
-    const DRIVER = 'mysql';
-
     /** @var MySQL */
     private $writer;
 
     private $config;
-
-    protected $dataDir = __DIR__ . '../../data';
 
     /** @var TestHandler */
     private $testHandler;
@@ -27,12 +24,11 @@ class MySQLSSHTest extends BaseTest
     {
         $this->config = $this->getConfig();
         $this->config['parameters']['writer_class'] = 'MySQL';
-
         $this->config['parameters']['db']['ssh'] = [
             'enabled' => true,
             'keys' => [
-                '#private' => $this->getEnv('mysql', 'DB_SSH_KEY_PRIVATE'),
-                'public' => $this->getEnv('mysql', 'DB_SSH_KEY_PUBLIC')
+                '#private' => $this->getPrivateKey(),
+                'public' => ''
             ],
             'user' => 'root',
             'sshHost' => 'sshproxy',
@@ -41,22 +37,13 @@ class MySQLSSHTest extends BaseTest
             'localPort' => '23306',
         ];
 
-
         $this->testHandler = new TestHandler();
 
-        $logger = new Logger(APP_NAME);
+        $logger = new Logger('wr-db-mysql-tests');
         $logger->setHandlers([$this->testHandler]);
 
         $writerFactory = new WriterFactory($this->config['parameters']);
-
         $this->writer = $writerFactory->create($logger);
-        $conn = $this->writer->getConnection();
-
-        $tables = $this->config['parameters']['tables'];
-
-        foreach ($tables as $table) {
-            $conn->exec(sprintf('DROP TABLE IF EXISTS %s', $table['dbName']));
-        }
     }
 
     public function testWriteMysql()
@@ -67,7 +54,7 @@ class MySQLSSHTest extends BaseTest
         $table = $tables[0];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/mysql/" . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . ".csv";
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -90,7 +77,7 @@ class MySQLSSHTest extends BaseTest
         $table = $tables[1];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/mysql/" . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . ".csv";
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -113,7 +100,7 @@ class MySQLSSHTest extends BaseTest
         $table = $tables[0];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/mysql/" . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . ".csv";
 
         $table['items'][2]['type'] = 'IGNORE';
 

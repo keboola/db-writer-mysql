@@ -8,10 +8,11 @@ services:
       - .:/code
     working_dir: /code
     environment:
-      MYSQL_DB_HOST: mysql
-      MYSQL_DB_USER: root
-      MYSQL_DB_PASSWORD: rootpassword
-      MYSQL_DB_DATABASE: test
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_DATABASE: test
+      SSH_KEY_PRIVATE: ${SSH_KEY_PRIVATE}
     links:
       - mysql
       - sshproxy
@@ -20,14 +21,13 @@ services:
     build: .
     image: keboola/db-writer-mysql
     command: composer ci
-    volumes:
-      - .:/code
     working_dir: /code
     environment:
-      MYSQL_DB_HOST: mysql
-      MYSQL_DB_USER: root
-      MYSQL_DB_PASSWORD: rootpassword
-      MYSQL_DB_DATABASE: test
+      DB_HOST: mysql
+      DB_USER: root
+      DB_PASSWORD: rootpassword
+      DB_DATABASE: test
+      SSH_KEY_PRIVATE: ${SSH_KEY_PRIVATE}
     links:
       - mysql
       - sshproxy
@@ -57,10 +57,8 @@ services:
 
   sshproxy:
     build: ./tests/env/sshproxy
-    volumes:
-        - ./tests/env/sshproxy:/code
-    working_dir: /code
+    command: sh -c 'echo $SSH_KEY_PUBLIC >> ~/.ssh/authorized_keys && /usr/sbin/sshd -D'
+    environment:
+      - SSH_KEY_PUBLIC
     ports:
       - "2222:22"
-    links:
-      - mysql

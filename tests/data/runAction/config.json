@@ -1,5 +1,6 @@
 {
     "parameters": {
+        "writer_class": "MySQL",
         "db": {
             "host": "mysql",
             "port": "3306",
@@ -50,9 +51,9 @@
                         "name": "col1",
                         "dbName": "col1",
                         "type": "varchar",
-                        "size": 255
-                        "nullable":
-                        "default":
+                        "size": 255,
+                        "nullable": null,
+                        "default": null
                     },
                     {
                         "name": "col2",
