@@ -4,29 +4,22 @@ namespace Keboola\DbWriter\Tests\Writer;
 
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Test\BaseTest;
+use Keboola\DbWriter\Test\MySQLBaseTest;
 use Keboola\DbWriter\Writer\MySQL;
 
-class MySQLTest extends BaseTest
+class MySQLTest extends MySQLBaseTest
 {
     /** @var MySQL */
     private $writer;
 
     private $config;
 
-    protected $dataDir = __DIR__ . '../../data';
-
     public function setUp()
     {
         $this->config = $this->getConfig();
         $this->config['parameters']['writer_class'] = 'MySQL';
         $this->writer = $this->getWriter($this->config['parameters']);
-        $conn = $this->writer->getConnection();
-
-        $tables = $this->config['parameters']['tables'];
-
-        foreach ($tables as $table) {
-            $conn->exec(sprintf('DROP TABLE IF EXISTS %s', $table['dbName']));
-        }
+        $this->cleanup($this->config);
     }
 
     public function testDrop()
@@ -113,7 +106,7 @@ class MySQLTest extends BaseTest
         $table = $tables[0];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/mysql/" . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . "/" . $sourceTableId . ".csv";
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -136,7 +129,7 @@ class MySQLTest extends BaseTest
         $table = $tables[1];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/mysql/" . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . "/" . $sourceTableId . ".csv";
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -159,7 +152,7 @@ class MySQLTest extends BaseTest
         $table = $tables[0];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/mysql/" . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . "/" . $sourceTableId . ".csv";
 
         $table['items'][2]['type'] = 'IGNORE';
 
@@ -199,7 +192,7 @@ class MySQLTest extends BaseTest
         $table = $tables[0];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/mysql/" . $sourceTableId . "_default.csv";
+        $sourceFilename = $this->dataDir . "/" . $sourceTableId . "_default.csv";
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -216,7 +209,7 @@ class MySQLTest extends BaseTest
             $csv->writeRow($row);
         }
 
-        $expected = $this->dataDir . "/mysql/" . $sourceTableId . ".csv";
+        $expected = $this->dataDir . "/" . $sourceTableId . ".csv";
 
         $this->assertFileEquals($expected, $resFilename);
     }
@@ -239,7 +232,7 @@ class MySQLTest extends BaseTest
         $tables = $this->config['parameters']['tables'];
 
         $table = $tables[0];
-        $sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . ".csv";
+        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . ".csv";
         $targetTable = $table;
         $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
 
@@ -248,7 +241,7 @@ class MySQLTest extends BaseTest
         $this->writer->write(new CsvFile($sourceFilename), $targetTable);
 
         // second write
-        $sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_increment.csv";
+        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . "_increment.csv";
         $this->writer->create($table);
         $this->writer->write(new CsvFile($sourceFilename), $table);
         $this->writer->upsert($table, $targetTable['dbName']);
@@ -263,7 +256,7 @@ class MySQLTest extends BaseTest
             $csv->writeRow($row);
         }
 
-        $expectedFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_merged.csv";
+        $expectedFilename = $this->dataDir . "/" . $table['tableId'] . "_merged.csv";
 
         $this->assertFileEquals($expectedFilename, $resFilename);
     }
@@ -313,7 +306,7 @@ class MySQLTest extends BaseTest
         $table = $tables[0];
         $table['items'] = array_reverse($table['items']);
 
-        $sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . ".csv";
+        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . ".csv";
         $targetTable = $table;
         $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
 
@@ -322,14 +315,14 @@ class MySQLTest extends BaseTest
         $this->writer->write(new CsvFile($sourceFilename), $targetTable);
 
         // second write
-        $sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_increment.csv";
+        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . "_increment.csv";
 
         $this->writer->create($table);
         $this->writer->write(new CsvFile($sourceFilename), $table);
         $this->writer->upsert($table, $targetTable['dbName']);
 
 
-        $expectedFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_merged.csv";
+        $expectedFilename = $this->dataDir . "/" . $table['tableId'] . "_merged.csv";
         $expectedFile = new CsvFile($expectedFilename);
         $header = $expectedFile->getHeader();
 
@@ -373,7 +366,7 @@ class MySQLTest extends BaseTest
             }
         }
 
-        $sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . ".csv";
+        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . ".csv";
         $targetTable = $table;
         $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
 
@@ -382,14 +375,14 @@ class MySQLTest extends BaseTest
         $this->writer->write(new CsvFile($sourceFilename), $targetTable);
 
         // second write
-        $sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_increment.csv";
+        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . "_increment.csv";
 
         $this->writer->create($table);
         $this->writer->write(new CsvFile($sourceFilename), $table);
         $this->writer->upsert($table, $targetTable['dbName']);
 
 
-        $expectedFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_merged.csv";
+        $expectedFilename = $this->dataDir . "/" . $table['tableId'] . "_merged.csv";
         $expectedCsv = new CsvFile($expectedFilename);
 
         // prepare validation file

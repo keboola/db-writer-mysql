@@ -1,5 +1,5 @@
 {
-    "action": "testConnection".
+    "action": "testConnection",
     "parameters": {
         "db": {
             "host": "mysql",
@@ -8,63 +8,6 @@
             "user": "root",
             "#password": "rootpassword"
         },
-        "tables": [
-            {
-                "tableId": "simple",
-                "dbName": "simple",
-                "export": true,
-                "incremental": false,
-                "primaryKey": ["id"],
-                "items": [
-                    {
-                        "name": "id",
-                        "dbName": "id",
-                        "type": "int",
-                        "size": null,
-                        "nullable": null,
-                        "default": null
-                    },
-                    {
-                        "name": "name",
-                        "dbName": "name",
-                        "type": "varchar",
-                        "size": 255,
-                        "nullable": null,
-                        "default": null
-                    },
-                    {
-                        "name": "glasses",
-                        "dbName": "glasses",
-                        "type": "varchar",
-                        "size": 255,
-                        "nullable": null,
-                        "default": null
-                    }
-                ]
-            },
-            {
-                "tableId": "special",
-                "dbName": "special",
-                "export": false,
-                "items": [
-                    {
-                        "name": "col1",
-                        "dbName": "col1",
-                        "type": "varchar",
-                        "size": 255
-                        "nullable":
-                        "default":
-                    },
-                    {
-                        "name": "col2",
-                        "dbName": "col2",
-                        "type": "varchar",
-                        "size": 255,
-                        "nullable": null,
-                        "default": null
-                    }
-                ]
-            }
-        ]
+        "tables": []
     }
 }

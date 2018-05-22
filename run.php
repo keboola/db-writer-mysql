@@ -6,7 +6,6 @@ use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Application;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
-use Monolog\Handler\NullHandler;
 use Keboola\DbWriter\Configuration\MySQLConfigDefinition;
 
 require_once(dirname(__FILE__) . "/vendor/autoload.php");
@@ -39,12 +38,7 @@ try {
 
     $action = isset($config['action']) ? $config['action'] : $action;
 
-    if ($action !== 'run') {
-        $logger->setHandlers(array(new NullHandler(Logger::INFO)));
-    }
-
     $app = new Application($config, $logger, new MySQLConfigDefinition());
-    $result = $app->run();
 
     echo json_encode($result);
 
