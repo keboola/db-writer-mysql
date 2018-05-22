@@ -39,14 +39,12 @@ try {
 
     $action = isset($config['action']) ? $config['action'] : $action;
 
-    if ($action !== 'run') {
-        $logger->setHandlers(array(new NullHandler(Logger::INFO)));
-    }
-
     $app = new Application($config, $logger, new MySQLConfigDefinition());
-    echo $app->run();
 
-    exit(0);
+    if ($app['action'] !== 'run') {
+        $app['logger']->setHandlers(array(new NullHandler(Logger::INFO)));
+    }
+    echo $app->run();
 } catch (UserException $e) {
     $logger->error($e->getMessage());
 
@@ -80,3 +78,4 @@ try {
     );
     exit(2);
 }
+exit(0);

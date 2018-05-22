@@ -16,8 +16,6 @@ class MySQLSSHTest extends MySQLBaseTest
 
     private $config;
 
-    protected $dataDir = __DIR__ . '../../data';
-
     /** @var TestHandler */
     private $testHandler;
 
@@ -101,7 +99,7 @@ class MySQLSSHTest extends MySQLBaseTest
         $table = $tables[0];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/mysql/" . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . ".csv";
 
         $table['items'][2]['type'] = 'IGNORE';
 
