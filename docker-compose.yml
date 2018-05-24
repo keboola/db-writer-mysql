@@ -35,7 +35,7 @@ services:
   wait:
     image: waisbrot/wait
     depends_on:
-      - mssql
+      - mysql
       - sshproxy
     environment:
       - TARGETS=mysql:3306,sshproxy:22
