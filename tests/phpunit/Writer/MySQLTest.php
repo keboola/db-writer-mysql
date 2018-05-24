@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Keboola\DbWriter\Tests\Writer;
 
 use Keboola\Csv\CsvFile;
@@ -12,9 +14,10 @@ class MySQLTest extends MySQLBaseTest
     /** @var MySQL */
     private $writer;
 
+    /** @var array */
     private $config;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->config = $this->getConfig();
         $this->config['parameters']['writer_class'] = 'MySQL';
@@ -22,7 +25,7 @@ class MySQLTest extends MySQLBaseTest
         $this->cleanup($this->config);
     }
 
-    public function testDrop()
+    public function testDrop(): void
     {
         $conn = $this->writer->getConnection();
         $this->writer->drop("dropMe");
@@ -48,7 +51,7 @@ class MySQLTest extends MySQLBaseTest
         $this->assertFalse($tableExists);
     }
 
-    public function testCreate()
+    public function testCreate(): void
     {
         $tables = $this->config['parameters']['tables'];
 
@@ -72,7 +75,7 @@ class MySQLTest extends MySQLBaseTest
         $this->assertTrue($tableExits);
     }
 
-    public function testCreateDefaultValue()
+    public function testCreateDefaultValue(): void
     {
         $tables = $this->config['parameters']['tables'];
         $tables[0]['items'][2]['nullable'] = true;
@@ -98,7 +101,7 @@ class MySQLTest extends MySQLBaseTest
         $this->assertTrue($tableExits);
     }
 
-    public function testWriteMysql()
+    public function testWriteMysql(): void
     {
         $tables = $this->config['parameters']['tables'];
 
@@ -184,7 +187,7 @@ class MySQLTest extends MySQLBaseTest
         $this->assertEquals($srcArr, $resArr);
     }
 
-    public function testWriteDefaultValue()
+    public function testWriteDefaultValue(): void
     {
         $tables = $this->config['parameters']['tables'];
 
@@ -214,7 +217,7 @@ class MySQLTest extends MySQLBaseTest
         $this->assertFileEquals($expected, $resFilename);
     }
 
-    public function testGetAllowedTypes()
+    public function testGetAllowedTypes(): void
     {
         $allowedTypes = $this->writer->getAllowedTypes();
 
@@ -222,11 +225,11 @@ class MySQLTest extends MySQLBaseTest
             'int', 'smallint', 'bigint',
             'decimal', 'float', 'double',
             'date', 'datetime', 'timestamp',
-            'char', 'varchar', 'text', 'blob'
+            'char', 'varchar', 'text', 'blob',
         ], $allowedTypes);
     }
 
-    public function testUpsert()
+    public function testUpsert(): void
     {
         $conn = $this->writer->getConnection();
         $tables = $this->config['parameters']['tables'];
@@ -298,7 +301,7 @@ class MySQLTest extends MySQLBaseTest
         $this->assertFileEquals($expectedFilename, $resFilename);
     }
 
-    public function testReorderColumns()
+    public function testReorderColumns(): void
     {
         $conn = $this->writer->getConnection();
         $tables = $this->config['parameters']['tables'];
@@ -340,8 +343,7 @@ class MySQLTest extends MySQLBaseTest
         $this->assertFileEquals($expectedFilename, $resFilename);
     }
 
-
-    public function testReorderRenameIgnoreColumns()
+    public function testReorderRenameIgnoreColumns(): void
     {
         $conn = $this->writer->getConnection();
         $tables = $this->config['parameters']['tables'];
@@ -429,7 +431,7 @@ class MySQLTest extends MySQLBaseTest
     }
 
 
-    public function testGenerateTmpName()
+    public function testGenerateTmpName(): void
     {
         $tables = $this->config['parameters']['tables'];
 

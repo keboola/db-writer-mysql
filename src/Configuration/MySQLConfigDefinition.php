@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Keboola\DbWriter\Configuration;
 
+use Symfony\Component\Config\Definition\Builder\NodeDefinition;
 use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 
 class MySQLConfigDefinition extends ConfigDefinition
 {
-    public function getConfigTreeBuilder()
+    public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder();
         $rootNode = $treeBuilder->root('parameters');
@@ -94,7 +97,7 @@ class MySQLConfigDefinition extends ConfigDefinition
         return $treeBuilder;
     }
 
-    public function addSslNode()
+    public function addSslNode(): NodeDefinition
     {
         $builder = new TreeBuilder();
         $node = $builder->root('ssl');

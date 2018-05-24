@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Keboola\DbWriter\Writer;
 
 use Keboola\Csv\CsvFile;
@@ -10,33 +12,35 @@ use Keboola\Temp\Temp;
 
 class MySQL extends Writer implements WriterInterface
 {
+    /** @var array */
     private static $allowedTypes = [
         'int', 'smallint', 'bigint',
         'decimal', 'float', 'double',
         'date', 'datetime', 'timestamp',
-        'char', 'varchar', 'text', 'blob'
+        'char', 'varchar', 'text', 'blob',
     ];
 
 
     /** @var \PDO */
     protected $db;
 
+    /** @var string */
     private $charset = 'utf8mb4';
 
-    public function generateTmpName($tableName)
+    public function generateTmpName(string $tableName): string
     {
         $tmpId = '_temp_' . uniqid();
         return mb_substr($tableName, 0, 30 - mb_strlen($tmpId)) . $tmpId;
     }
 
-    public function createConnection($dbParams)
+    public function createConnection(array $dbParams): \PDO
     {
         $isSsl = false;
 
         // convert errors to PDOExceptions
         $options = [
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-            \PDO::MYSQL_ATTR_LOCAL_INFILE => true
+            \PDO::MYSQL_ATTR_LOCAL_INFILE => true,
         ];
 
         if (!isset($dbParams['password']) && isset($dbParams['#password'])) {
@@ -107,7 +111,7 @@ class MySQL extends Writer implements WriterInterface
         return $pdo;
     }
 
-    public function write(CsvFile $csv, array $table)
+    public function write(CsvFile $csv, array $table): void
     {
         $header = $csv->getHeader();
         $columnNames = $this->columnNamesForLoad($table, $header);
@@ -129,12 +133,12 @@ class MySQL extends Writer implements WriterInterface
             $this->db->exec($query);
         } catch (\PDOException $e) {
             throw new UserException("Query failed: " . $e->getMessage(), 400, $e, [
-                'query' => $query
+                'query' => $query,
             ]);
         }
     }
 
-    protected function emptyToDefault($table)
+    protected function emptyToDefault(array $table): string
     {
         $defaultCols = array_filter($table['items'], function ($column) {
             return !empty($column['default']) && strtolower($column['type']) !== 'ignore';
@@ -156,7 +160,7 @@ class MySQL extends Writer implements WriterInterface
         return 'SET ' . implode(',', $defaultExpression);
     }
 
-    protected function columnNamesForLoad($table, $header)
+    protected function columnNamesForLoad(array $table, array $header): array
     {
         return array_map(function ($column) use ($table) {
             // skip ignored
@@ -178,17 +182,17 @@ class MySQL extends Writer implements WriterInterface
         }, $header);
     }
 
-    public function drop($tableName)
+    public function drop(string $tableName): void
     {
         $this->db->exec(sprintf("DROP TABLE IF EXISTS %s;", $this->escape($tableName)));
     }
 
-    private function escape($obj)
+    private function escape(string $obj): string
     {
         return "`{$obj}`";
     }
 
-    public function create(array $table)
+    public function create(array $table): void
     {
         $sql = "CREATE TABLE " . $this->escape($table['dbName']) . " (";
 
@@ -236,12 +240,12 @@ class MySQL extends Writer implements WriterInterface
         $this->db->exec($sql);
     }
 
-    public static function getAllowedTypes()
+    public static function getAllowedTypes(): array
     {
         return self::$allowedTypes;
     }
 
-    public function upsert(array $table, $targetTable)
+    public function upsert(array $table, string $targetTable): void
     {
         $this->logger->info('Upserting table "' . $table['dbName'] . '".');
 
@@ -331,19 +335,19 @@ class MySQL extends Writer implements WriterInterface
         }
     }
 
-    private function createSSLFile($sslCa, Temp $temp)
+    private function createSSLFile(string $sslCa, Temp $temp): string
     {
         $filename = $temp->createTmpFile('ssl');
         file_put_contents($filename, $sslCa);
         return realpath($filename);
     }
 
-    public function testConnection()
+    public function testConnection(): void
     {
         $this->db->query('SELECT NOW();')->execute();
     }
 
-    public function tableExists($tableName)
+    public function tableExists(string $tableName): bool
     {
         $stmt = $this->db->prepare('SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = ?;');
         $stmt->execute([$tableName]);
@@ -352,7 +356,7 @@ class MySQL extends Writer implements WriterInterface
         return !empty($res);
     }
 
-    public function showTables($dbName)
+    public function showTables(string $dbName): array
     {
         $stmt = $this->db->query("SHOW TABLES;");
         $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -362,13 +366,13 @@ class MySQL extends Writer implements WriterInterface
         }, $res);
     }
 
-    public function getTableInfo($tableName)
+    public function getTableInfo(string $tableName): array
     {
         $stmt = $this->db->query(sprintf("DESCRIBE %s;", $this->escape($tableName)));
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
-    public function validateTable($tableConfig)
+    public function validateTable(array $tableConfig): void
     {
         // TODO: Implement validateTable() method.
     }

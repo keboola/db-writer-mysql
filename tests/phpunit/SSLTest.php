@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Keboola\DbWriter\Tests;
 
 use Keboola\DbWriter\Application;
@@ -12,7 +14,7 @@ class SSLTest extends MySQLBaseTest
     /** @var \PDO */
     protected $pdo;
 
-    public function setUp()
+    public function setUp(): void
     {
         $options = [
             \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
@@ -36,7 +38,7 @@ class SSLTest extends MySQLBaseTest
         $this->pdo->exec("SET NAMES utf8;");
     }
 
-    public function testSSLEnabled()
+    public function testSSLEnabled(): void
     {
         $status = $this->pdo->query("SHOW STATUS LIKE 'Ssl_cipher';")->fetch(\PDO::FETCH_ASSOC);
 
@@ -44,7 +46,7 @@ class SSLTest extends MySQLBaseTest
         $this->assertNotEmpty($status['Value']);
     }
 
-    public function testCredentials()
+    public function testCredentials(): void
     {
         $config = $this->getConfig();
         $config['parameters']['writer_class'] = 'MySQL';
