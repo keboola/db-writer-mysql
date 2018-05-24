@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Keboola\DbWriter\Tests\Writer;
 
 use Keboola\Csv\CsvFile;
@@ -14,12 +16,13 @@ class MySQLSSHTest extends MySQLBaseTest
     /** @var MySQL */
     private $writer;
 
+    /** @var array */
     private $config;
 
     /** @var TestHandler */
     private $testHandler;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->config = $this->getConfig();
         $this->config['parameters']['writer_class'] = 'MySQL';
@@ -27,7 +30,7 @@ class MySQLSSHTest extends MySQLBaseTest
             'enabled' => true,
             'keys' => [
                 '#private' => $this->getPrivateKey(),
-                'public' => ''
+                'public' => '',
             ],
             'user' => 'root',
             'sshHost' => 'sshproxy',
@@ -45,7 +48,7 @@ class MySQLSSHTest extends MySQLBaseTest
         $this->writer = $writerFactory->create($logger);
     }
 
-    public function testWriteMysql()
+    public function testWriteMysql(): void
     {
         $tables = $this->config['parameters']['tables'];
 

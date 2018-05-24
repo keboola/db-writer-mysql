@@ -45,7 +45,7 @@ class MySQLBaseTest extends BaseTest
         return $process;
     }
 
-    protected function cleanup($config): void
+    protected function cleanup(array $config): void
     {
         $writer = $this->getWriter($config['parameters']);
         $tables = $config['parameters']['tables'];
