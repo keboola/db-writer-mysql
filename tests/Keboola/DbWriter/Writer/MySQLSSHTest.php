@@ -154,7 +154,7 @@ class MySQLSSHTest extends BaseTest
 
 		$records = $this->testHandler->getRecords();
 
-		$this->assertCount(2, $records);
+		$this->assertCount(14, $records);
 
 		$this->assertArrayHasKey('message', $records[0]);
 		$this->assertArrayHasKey('level', $records[0]);

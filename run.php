@@ -4,6 +4,8 @@ use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Application;
+use Monolog\Formatter\LineFormatter;
+use Monolog\Handler\StreamHandler;
 use Symfony\Component\Yaml\Yaml;
 use Monolog\Handler\NullHandler;
 use Keboola\DbWriter\Configuration\MySQLConfigDefinition;
@@ -13,8 +15,21 @@ define('ROOT_PATH', __DIR__);
 
 require_once(dirname(__FILE__) . "/vendor/keboola/db-writer-common/bootstrap.php");
 
-$logger = new Logger(APP_NAME);
+$criticalHandler = new StreamHandler('php://stderr');
+$criticalHandler->setBubble(false);
+$criticalHandler->setLevel(Logger::CRITICAL);
+$criticalHandler->setFormatter(new LineFormatter("[%datetime%] %level_name%: %message% %context% %extra%\n"));
+$errorHandler = new StreamHandler('php://stderr');
+$errorHandler->setBubble(false);
+$errorHandler->setLevel(Logger::WARNING);
+$errorHandler->setFormatter(new LineFormatter("%message%\n"));
+$logHandler = new StreamHandler('php://stdout');
+$logHandler->setBubble(false);
+$logHandler->setLevel(Logger::INFO);
+$logHandler->setFormatter(new LineFormatter("%message%\n"));
 
+$logger = new Logger(APP_NAME);
+$logger->setHandlers([$criticalHandler, $errorHandler, $logHandler]);
 $action = 'run';
 
 try {
@@ -40,7 +55,7 @@ try {
     $logger->info("MySQL Writer finished successfully.");
     exit(0);
 } catch(UserException $e) {
-    $logger->log('error', $e->getMessage(), (array) $e->getData());
+    $logger->error($e->getMessage());
 
     if ($action !== 'run') {
         echo $e->getMessage();
@@ -48,14 +63,28 @@ try {
 
     exit(1);
 } catch(ApplicationException $e) {
-    $logger->log('error', $e->getMessage(), (array) $e->getData());
+    $logger->critical(
+        get_class($e) . ':' . $e->getMessage(),
+        [
+            'errFile' => $e->getFile(),
+            'errLine' => $e->getLine(),
+            'errCode' => $e->getCode(),
+            'errTrace' => $e->getTraceAsString(),
+            'errPrevious' => $e->getPrevious() ? get_class($e->getPrevious()) : '',
+        ]
+    );
     exit($e->getCode() > 1 ? $e->getCode(): 2);
-} catch(\Exception $e) {
-    $logger->log('error', $e->getMessage(), [
-        'errFile' => $e->getFile(),
-        'errLine' => $e->getLine(),
-        'trace' => $e->getTrace()
-    ]);
+} catch(\Throwable $e) {
+    $logger->critical(
+        get_class($e) . ':' . $e->getMessage(),
+        [
+            'errFile' => $e->getFile(),
+            'errLine' => $e->getLine(),
+            'errCode' => $e->getCode(),
+            'errTrace' => $e->getTraceAsString(),
+            'errPrevious' => $e->getPrevious() ? get_class($e->getPrevious()) : '',
+        ]
+    );
     exit(2);
 }
 exit(0);
