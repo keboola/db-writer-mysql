@@ -133,6 +133,7 @@ class MySQL extends Writer implements WriterInterface
 
 	function write(CsvFile $csv, array $table)
 	{
+        $this->logger->info('Writing table "' . $table['dbName'] . '".');
 		$header = $csv->getHeader();
         $columnNames = $this->columnNamesForLoad($table, $header);
 		$csv->rewind();
@@ -156,6 +157,7 @@ class MySQL extends Writer implements WriterInterface
 				'query' => $query
 			]);
 		}
+        $this->logger->info('Table "' . $table['dbName'] . '" written.');
 	}
 
 	protected function emptyToDefault($table)
@@ -221,6 +223,7 @@ class MySQL extends Writer implements WriterInterface
 
 	function create(array $table)
 	{
+        $this->logger->info('Crating table "' . $table['dbName'] . '".');
 		$sql = "CREATE TABLE " . $this->escape($table['dbName']) . " (";
 
 		$columns = $table['items'];
@@ -266,6 +269,7 @@ class MySQL extends Writer implements WriterInterface
 		$sql .= ") DEFAULT CHARSET=$this->charset COLLATE {$this->charset}_unicode_ci";
 
 		$this->db->exec($sql);
+        $this->logger->info('Table "' . $table['dbName'] . '" created.');
 	}
 
 	static function getAllowedTypes()
@@ -275,7 +279,9 @@ class MySQL extends Writer implements WriterInterface
 
 	public function upsert(array $table, $targetTable)
 	{
-		$columns = array_filter($table['items'], function($item) {
+        $this->logger->info('Upserting table "' . $table['dbName'] . '".');
+
+        $columns = array_filter($table['items'], function($item) {
 			return $item['type'] !== 'IGNORE';
 		});
 
@@ -321,6 +327,7 @@ class MySQL extends Writer implements WriterInterface
 
 		// drop temp table
 		$this->drop($table['dbName']);
+        $this->logger->info('Table "' . $table['dbName'] . '" upserted.');
 	}
 
 	/**
