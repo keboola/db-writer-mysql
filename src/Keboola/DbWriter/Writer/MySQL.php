@@ -281,6 +281,10 @@ class MySQL extends Writer implements WriterInterface
 	{
         $this->logger->info('Upserting table "' . $table['dbName'] . '".');
 
+        $this->db->beginTransaction();
+        $this->db->query("SET unique_checks=0");
+        $this->db->query("SET foreign_key_checks=0");
+
         $columns = array_filter($table['items'], function($item) {
 			return $item['type'] !== 'IGNORE';
 		});
@@ -321,9 +325,15 @@ class MySQL extends Writer implements WriterInterface
 		$columnsClause = implode(',', $columns);
 
 		// insert new data
-		$query = "INSERT INTO {$this->escape($targetTable)} ({$columnsClause})
-		SELECT * FROM {$this->escape($table['dbName'])}";
+        $query = "
+          INSERT INTO {$this->escape($targetTable)} ({$columnsClause})
+          SELECT * FROM {$this->escape($table['dbName'])}
+        ";
 		$this->db->exec($query);
+
+        $this->db->query("SET unique_checks=1");
+        $this->db->query("SET foreign_key_checks=1");
+        $this->db->commit();
 
 		// drop temp table
 		$this->drop($table['dbName']);
