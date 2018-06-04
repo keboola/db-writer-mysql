@@ -44,7 +44,7 @@ try {
 
     $logger->info("MySQL Writer finished successfully.");
     exit(0);
-} catch(UserException $e) {
+} catch (UserException $e) {
     $logger->error($e->getMessage());
 
     if ($action !== 'run') {
@@ -52,7 +52,7 @@ try {
     }
 
     exit(1);
-} catch(ApplicationException $e) {
+} catch (ApplicationException $e) {
     $logger->critical(
         get_class($e) . ':' . $e->getMessage(),
         [
@@ -64,7 +64,7 @@ try {
         ]
     );
     exit($e->getCode() > 1 ? $e->getCode(): 2);
-} catch(\Throwable $e) {
+} catch (\Throwable $e) {
     $logger->critical(
         get_class($e) . ':' . $e->getMessage(),
         [
