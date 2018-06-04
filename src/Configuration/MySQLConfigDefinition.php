@@ -6,11 +6,6 @@ use Symfony\Component\Config\Definition\Builder\TreeBuilder;
 
 class MySQLConfigDefinition extends ConfigDefinition
 {
-    /**
-     * Generates the configuration tree builder.
-     *
-     * @return \Symfony\Component\Config\Definition\Builder\TreeBuilder The tree builder
-     */
     public function getConfigTreeBuilder()
     {
         $treeBuilder = new TreeBuilder();
@@ -97,33 +92,6 @@ class MySQLConfigDefinition extends ConfigDefinition
         ;
 
         return $treeBuilder;
-    }
-
-    public function addSshNode()
-    {
-        $builder = new TreeBuilder();
-        $node = $builder->root('ssh');
-
-        $node
-            ->children()
-                ->booleanNode('enabled')->end()
-                ->arrayNode('keys')
-                    ->children()
-                        ->scalarNode('private')->end()
-                        ->scalarNode('#private')->end()
-                        ->scalarNode('public')->end()
-                    ->end()
-                ->end()
-                ->scalarNode('sshHost')->end()
-                ->scalarNode('sshPort')->end()
-                ->scalarNode('remoteHost')->end()
-                ->scalarNode('remotePort')->end()
-                ->scalarNode('localPort')->end()
-                ->scalarNode('user')->end()
-            ->end()
-        ;
-
-        return $node;
     }
 
     public function addSslNode()
