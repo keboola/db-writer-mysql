@@ -7,8 +7,8 @@ before_install:
   - docker-compose -v
 
 script:
-  - docker-compose build
-  - docker-compose run app
+  - docker-compose build tests
+  - docker-compose run --rm tests
 
 deploy:
   provider: script

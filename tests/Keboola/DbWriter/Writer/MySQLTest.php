@@ -9,6 +9,7 @@
 namespace Keboola\DbWriter\Writer;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Test\BaseTest;
 
 class MySQLTest extends BaseTest
@@ -276,6 +277,43 @@ class MySQLTest extends BaseTest
 		$this->assertFileEquals($expectedFilename, $resFilename);
 	}
 
+    public function testUpsertWithoutPK()
+    {
+        $conn = $this->writer->getConnection();
+        $tables = $this->config['parameters']['tables'];
+
+        $table = $tables[0];
+        $table['primaryKey'] = [];
+
+        $sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . ".csv";
+        $targetTable = $table;
+        $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
+
+        // first write
+        $this->writer->create($targetTable);
+        $this->writer->write(new CsvFile($sourceFilename), $targetTable);
+
+        // second write
+        $sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_increment.csv";
+        $this->writer->create($table);
+        $this->writer->write(new CsvFile($sourceFilename), $table);
+        $this->writer->upsert($table, $targetTable['dbName']);
+
+        $stmt = $conn->query("SELECT * FROM {$targetTable['dbName']}");
+        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
+        $csv = new CsvFile($resFilename);
+        $csv->writeRow(["id", "name", "glasses"]);
+        foreach ($res as $row) {
+            $csv->writeRow($row);
+        }
+
+        $expectedFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_merged_no_pk.csv";
+
+        $this->assertFileEquals($expectedFilename, $resFilename);
+    }
+
 	public function testReorderColumns()
 	{
 		$conn = $this->writer->getConnection();
@@ -434,4 +472,24 @@ class MySQLTest extends BaseTest
 		$this->writer->drop($tmpName);
 		$this->writer->create($table);
 	}
+
+	public function testCheckKeysOK()
+    {
+        $tableConfig = $this->config['parameters']['tables'][0];
+        $this->writer->create($tableConfig);
+        $this->writer->checkKeys($tableConfig['primaryKey'], $tableConfig['dbName']);
+
+        // no exception thrown, that's good
+        $this->assertTrue(true);
+    }
+
+    public function testCheckKeysError()
+    {
+        $this->setExpectedException(get_class(new UserException()));
+        $tableConfig = $this->config['parameters']['tables'][0];
+        $tableConfigWithOtherPrimaryKeys = $tableConfig;
+        $tableConfigWithOtherPrimaryKeys['primaryKey'] = [];
+        $this->writer->create($tableConfigWithOtherPrimaryKeys);
+        $this->writer->checkKeys($tableConfig['primaryKey'], $tableConfig['dbName']);
+    }
 }

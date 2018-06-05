@@ -285,56 +285,74 @@ class MySQL extends Writer implements WriterInterface
 			return $item['type'] !== 'IGNORE';
 		});
 
-		$columns = array_map(function($item) {
+		$dbColumns = array_map(function($item) {
 			return $this->escape($item['dbName']);
 		}, $columns);
 
 		if (!empty($table['primaryKey'])) {
-			// update data
-			$joinClauseArr = [];
-			foreach ($table['primaryKey'] as $index => $value) {
-				$joinClauseArr[] = "a.{$value}=b.{$value}";
-			}
-			$joinClause = implode(' AND ', $joinClauseArr);
-
-			$valuesClauseArr = [];
-			foreach ($columns as $index => $column) {
-				$valuesClauseArr[] = "a.{$column}=b.{$column}";
-			}
-			$valuesClause = implode(',', $valuesClauseArr);
-
-			$query = "UPDATE {$this->escape($targetTable)} a
-			INNER JOIN {$this->escape($table['dbName'])} b ON {$joinClause}
-            SET {$valuesClause}
-        ";
-
-			$this->db->exec($query);
-
-			// delete updated from temp table
-			$query = "DELETE a FROM {$this->escape($table['dbName'])} a
-            INNER JOIN {$this->escape($targetTable)} b ON {$joinClause}
-        ";
-
-			$this->db->exec($query);
+		    $this->upsertWithPK($table, $targetTable, $dbColumns);
+		    return;
 		}
 
-		$columnsClause = implode(',', $columns);
-
-		// insert new data
-		$query = "INSERT INTO {$this->escape($targetTable)} ({$columnsClause})
-		SELECT * FROM {$this->escape($table['dbName'])}";
-		$this->db->exec($query);
-
-		// drop temp table
-		$this->drop($table['dbName']);
-        $this->logger->info('Table "' . $table['dbName'] . '" upserted.');
+		$this->upsertWithoutPK($table, $targetTable, $dbColumns);
 	}
 
-	/**
-	 * @param $sslCa
-	 * @param Temp $temp
-	 * @return string
-	 */
+	private function upsertWithPK($table, $targetTable, $dbColumns)
+    {
+        // check primary keys
+        $this->checkKeys($table['primaryKey'], $targetTable);
+
+        // update data
+        $tempTableName = $this->escape($table['dbName']);
+        $targetTableName = $this->escape($targetTable);
+
+        $valuesClauseArr = [];
+        foreach ($dbColumns as $index => $column) {
+            $valuesClauseArr[] = "{$targetTableName}.{$column}={$tempTableName}.{$column}";
+        }
+        $valuesClause = implode(',', $valuesClauseArr);
+
+        $columnsClause = implode(',', $dbColumns);
+
+        $query = "
+          INSERT INTO {$targetTableName} ({$columnsClause})
+          SELECT * FROM {$tempTableName}
+          ON DUPLICATE KEY UPDATE
+          {$valuesClause}
+        ";
+
+        $this->db->exec($query);
+
+        // drop temp table
+        $this->drop($table['dbName']);
+        $this->logger->info('Table "' . $table['dbName'] . '" upserted.');
+    }
+
+    private function upsertWithoutPK($table, $targetTable, $dbColumns)
+    {
+        $columnsClause = implode(',', $dbColumns);
+
+        // insert new data
+        $this->db->exec("
+          INSERT INTO {$this->escape($targetTable)} ({$columnsClause})
+          SELECT * FROM {$this->escape($table['dbName'])}
+        ");
+
+        // drop temp table
+        $this->drop($table['dbName']);
+        $this->logger->info('Table "' . $table['dbName'] . '" upserted.');
+    }
+
+    private function getKeysFromDbTable($tableName, $keyName = 'PRIMARY')
+    {
+        $stmt = $this->db->query("SHOW KEYS FROM {$tableName} WHERE Key_name = '{$keyName}'");
+        $result = $stmt->fetchAll();
+
+        return array_map(function ($item) {
+            return $item['Column_name'];
+        }, $result);
+    }
+
 	private function createSSLFile($sslCa, Temp $temp)
 	{
 		$filename = $temp->createTmpFile('ssl');
@@ -371,4 +389,18 @@ class MySQL extends Writer implements WriterInterface
 		$stmt = $this->db->query(sprintf("DESCRIBE %s;", $this->escape($tableName)));
 		return $stmt->fetchAll(\PDO::FETCH_ASSOC);
 	}
+
+	public function checkKeys($configKeys, $targetTable)
+    {
+        $primaryKeysInDb = $this->getKeysFromDbTable($targetTable);
+        if ($primaryKeysInDb != $configKeys) {
+            throw new UserException(sprintf(
+                'Primary key(s) in configuration does NOT match with keys in DB table.' . PHP_EOL
+                . 'Keys in configuration: %s' . PHP_EOL
+                . 'Keys in DB table: %s',
+                implode(',', $configKeys),
+                implode(',', $primaryKeysInDb)
+            ));
+        }
+    }
 }
