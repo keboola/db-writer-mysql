@@ -9,6 +9,7 @@
 namespace Keboola\DbWriter\Writer;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Test\BaseTest;
 
 class MySQLTest extends BaseTest
@@ -434,4 +435,24 @@ class MySQLTest extends BaseTest
 		$this->writer->drop($tmpName);
 		$this->writer->create($table);
 	}
+
+	public function testCheckKeysOK()
+    {
+        $tableConfig = $this->config['parameters']['tables'][0];
+        $this->writer->create($tableConfig);
+        $this->writer->checkKeys($tableConfig['primaryKey'], $tableConfig['dbName']);
+
+        // no exception thrown, that's good
+        $this->assertTrue(true);
+    }
+
+    public function testCheckKeysError()
+    {
+        $this->setExpectedException(get_class(new UserException()));
+        $tableConfig = $this->config['parameters']['tables'][0];
+        $tableConfigWithOtherPrimaryKeys = $tableConfig;
+        $tableConfigWithOtherPrimaryKeys['primaryKey'] = [];
+        $this->writer->create($tableConfigWithOtherPrimaryKeys);
+        $this->writer->checkKeys($tableConfig['primaryKey'], $tableConfig['dbName']);
+    }
 }
