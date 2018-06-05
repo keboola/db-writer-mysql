@@ -485,10 +485,14 @@ class MySQLTest extends BaseTest
 
     public function testCheckKeysError()
     {
-        $this->setExpectedException(get_class(new UserException()));
+        $this->setExpectedException(
+            get_class(new UserException()),
+            "Primary key(s) in configuration does NOT match with keys in DB table."
+        );
         $tableConfig = $this->config['parameters']['tables'][0];
         $tableConfigWithOtherPrimaryKeys = $tableConfig;
-        $tableConfigWithOtherPrimaryKeys['primaryKey'] = [];
+        $tableConfigWithOtherPrimaryKeys['items'][0]['dbName'] = 'code';
+        $tableConfigWithOtherPrimaryKeys['primaryKey'] = ['code'];
         $this->writer->create($tableConfigWithOtherPrimaryKeys);
         $this->writer->checkKeys($tableConfig['primaryKey'], $tableConfig['dbName']);
     }
