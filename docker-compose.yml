@@ -1,6 +1,6 @@
 version: '2'
 services:
-  app:
+  dev:
     build: .
     image: keboola/db-writer-mysql
     volumes:
@@ -18,8 +18,22 @@ services:
       - mysql
       - sshproxy
 
+  tests:
+    build: .
+    image: keboola/db-writer-mysql
+    working_dir: /code
+    command: "./phpunit.sh"
+    environment:
+      MYSQL_DB_HOST: mysql
+      MYSQL_DB_USER: root
+      MYSQL_DB_PASSWORD: rootpassword
+      MYSQL_DB_DATABASE: test
+    links:
+      - mysql
+      - sshproxy
+
   mysql:
-    image: mysql:5.6
+    image: mysql:5.7
     volumes:
         - ./tests/data/mysql/ssl:/ssl-cert
         - ./tests/data/mysql/conf.d:/etc/mysql/conf.d
