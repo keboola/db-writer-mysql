@@ -345,7 +345,7 @@ class MySQL extends Writer implements WriterInterface
 
     private function getKeysFromDbTable($tableName, $keyName = 'PRIMARY')
     {
-        $stmt = $this->db->query("SHOW KEYS FROM {$tableName} WHERE Key_name = '{$keyName}'");
+        $stmt = $this->db->query("SHOW KEYS FROM {$this->escape($tableName)} WHERE Key_name = '{$keyName}'");
         $result = $stmt->fetchAll();
 
         return array_map(function ($item) {
