@@ -3,7 +3,7 @@
 namespace Keboola\DbWriter\Tests\Writer;
 
 use Keboola\Csv\CsvFile;
-use Keboola\DbWriter\Test\BaseTest;
+use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Test\MySQLBaseTest;
 use Keboola\DbWriter\Writer\MySQL;
 
@@ -269,7 +269,7 @@ class MySQLTest extends MySQLBaseTest
         $table = $tables[0];
         $table['primaryKey'] = [];
 
-        $sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . ".csv";
+        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . ".csv";
         $targetTable = $table;
         $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
 
@@ -278,7 +278,7 @@ class MySQLTest extends MySQLBaseTest
         $this->writer->write(new CsvFile($sourceFilename), $targetTable);
 
         // second write
-        $sourceFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_increment.csv";
+        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . "_increment.csv";
         $this->writer->create($table);
         $this->writer->write(new CsvFile($sourceFilename), $table);
         $this->writer->upsert($table, $targetTable['dbName']);
@@ -293,7 +293,7 @@ class MySQLTest extends MySQLBaseTest
             $csv->writeRow($row);
         }
 
-        $expectedFilename = $this->dataDir . "/mysql/" . $table['tableId'] . "_merged_no_pk.csv";
+        $expectedFilename = $this->dataDir . "/" . $table['tableId'] . "_merged_no_pk.csv";
 
         $this->assertFileEquals($expectedFilename, $resFilename);
     }
@@ -469,10 +469,8 @@ class MySQLTest extends MySQLBaseTest
 
     public function testCheckKeysError()
     {
-        $this->setExpectedException(
-            get_class(new UserException()),
-            "Primary key(s) in configuration does NOT match with keys in DB table."
-        );
+        $this->expectException(get_class(new UserException()));
+        $this->expectExceptionMessage("Primary key(s) in configuration does NOT match with keys in DB table.");
         $tableConfig = $this->config['parameters']['tables'][0];
         $tableConfigWithOtherPrimaryKeys = $tableConfig;
         $tableConfigWithOtherPrimaryKeys['items'][0]['dbName'] = 'code';

@@ -245,11 +245,11 @@ class MySQL extends Writer implements WriterInterface
     {
         $this->logger->info('Upserting table "' . $table['dbName'] . '".');
 
-        $columns = array_filter($table['items'], function($item) {
+        $columns = array_filter($table['items'], function ($item) {
             return $item['type'] !== 'IGNORE';
         });
 
-        $dbColumns = array_map(function($item) {
+        $dbColumns = array_map(function ($item) {
             return $this->escape($item['dbName']);
         }, $columns);
 
