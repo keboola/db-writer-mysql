@@ -264,7 +264,7 @@ class MySQLTest extends MySQLBaseTest
         $this->assertFileEquals($expectedFilename, $resFilename);
     }
 
-    public function testUpsertWithoutPK()
+    public function testUpsertWithoutPK(): void
     {
         $conn = $this->writer->getConnection();
         $tables = $this->config['parameters']['tables'];
@@ -430,7 +430,6 @@ class MySQLTest extends MySQLBaseTest
         $this->assertFileEquals($tmpExpectedFilename, $resFilename);
     }
 
-
     public function testGenerateTmpName(): void
     {
         $tables = $this->config['parameters']['tables'];
@@ -459,7 +458,7 @@ class MySQLTest extends MySQLBaseTest
         $this->writer->create($table);
     }
 
-    public function testCheckKeysOK()
+    public function testCheckKeysOK(): void
     {
         $tableConfig = $this->config['parameters']['tables'][0];
         $this->writer->create($tableConfig);
@@ -469,7 +468,7 @@ class MySQLTest extends MySQLBaseTest
         $this->assertTrue(true);
     }
 
-    public function testCheckKeysError()
+    public function testCheckKeysError(): void
     {
         $this->expectException(get_class(new UserException()));
         $this->expectExceptionMessage("Primary key(s) in configuration does NOT match with keys in DB table.");

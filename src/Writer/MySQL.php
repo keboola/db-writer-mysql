@@ -265,13 +265,13 @@ class MySQL extends Writer implements WriterInterface
         $this->upsertWithoutPK($table, $targetTable, $dbColumns);
     }
 
-    private function upsertWithPK($table, $targetTable, $dbColumns)
+    private function upsertWithPK(array $tableConfig, string $targetTable, array $dbColumns): void
     {
         // check primary keys
-        $this->checkKeys($table['primaryKey'], $targetTable);
+        $this->checkKeys($tableConfig['primaryKey'], $targetTable);
 
         // update data
-        $tempTableName = $this->escape($table['dbName']);
+        $tempTableName = $this->escape($tableConfig['dbName']);
         $targetTableName = $this->escape($targetTable);
 
         $valuesClauseArr = [];
@@ -279,7 +279,6 @@ class MySQL extends Writer implements WriterInterface
             $valuesClauseArr[] = "{$targetTableName}.{$column}={$tempTableName}.{$column}";
         }
         $valuesClause = implode(',', $valuesClauseArr);
-
         $columnsClause = implode(',', $dbColumns);
 
         $query = "
@@ -292,26 +291,26 @@ class MySQL extends Writer implements WriterInterface
         $this->db->exec($query);
 
         // drop temp table
-        $this->drop($table['dbName']);
-        $this->logger->info('Table "' . $table['dbName'] . '" upserted.');
+        $this->drop($tableConfig['dbName']);
+        $this->logger->info('Table "' . $tableConfig['dbName'] . '" upserted.');
     }
 
-    private function upsertWithoutPK($table, $targetTable, $dbColumns)
+    private function upsertWithoutPK(array $tableConfig, string $targetTable, array $dbColumns): void
     {
         $columnsClause = implode(',', $dbColumns);
 
         // insert new data
         $this->db->exec("
           INSERT INTO {$this->escape($targetTable)} ({$columnsClause})
-          SELECT * FROM {$this->escape($table['dbName'])}
+          SELECT * FROM {$this->escape($tableConfig['dbName'])}
         ");
 
         // drop temp table
-        $this->drop($table['dbName']);
-        $this->logger->info('Table "' . $table['dbName'] . '" upserted.');
+        $this->drop($tableConfig['dbName']);
+        $this->logger->info('Table "' . $tableConfig['dbName'] . '" upserted.');
     }
 
-    private function getKeysFromDbTable($tableName, $keyName = 'PRIMARY')
+    private function getKeysFromDbTable(string $tableName, string $keyName = 'PRIMARY'): array
     {
         $stmt = $this->db->query("SHOW KEYS FROM {$this->escape($tableName)} WHERE Key_name = '{$keyName}'");
         $result = $stmt->fetchAll();
@@ -321,7 +320,7 @@ class MySQL extends Writer implements WriterInterface
         }, $result);
     }
 
-    public function checkKeys($configKeys, $targetTable)
+    public function checkKeys(array $configKeys, string $targetTable): void
     {
         $primaryKeysInDb = $this->getKeysFromDbTable($targetTable);
         if ($primaryKeysInDb != $configKeys) {
@@ -337,9 +336,9 @@ class MySQL extends Writer implements WriterInterface
 
     private function createSSLFile(string $sslCa, Temp $temp): string
     {
-        $filename = $temp->createTmpFile('ssl');
-        file_put_contents($filename, $sslCa);
-        return realpath($filename);
+        $fileInfo = $temp->createTmpFile('ssl');
+        file_put_contents($fileInfo->getPathname(), $sslCa);
+        return $fileInfo->getPathname();
     }
 
     public function testConnection(): void
