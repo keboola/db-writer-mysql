@@ -323,6 +323,9 @@ class MySQL extends Writer implements WriterInterface
     public function checkKeys(array $configKeys, string $targetTable): void
     {
         $primaryKeysInDb = $this->getKeysFromDbTable($targetTable);
+        sort($primaryKeysInDb);
+        sort($configKeys);
+
         if ($primaryKeysInDb != $configKeys) {
             throw new UserException(sprintf(
                 'Primary key(s) in configuration does NOT match with keys in DB table.' . PHP_EOL

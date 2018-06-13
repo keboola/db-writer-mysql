@@ -461,8 +461,11 @@ class MySQLTest extends MySQLBaseTest
     public function testCheckKeysOK(): void
     {
         $tableConfig = $this->config['parameters']['tables'][0];
+        $tableConfig['primaryKey'] = ['id', 'name'];
         $this->writer->create($tableConfig);
-        $this->writer->checkKeys($tableConfig['primaryKey'], $tableConfig['dbName']);
+
+        // test with keys in different order
+        $this->writer->checkKeys(['name', 'id'], $tableConfig['dbName']);
 
         // no exception thrown, that's good
         $this->assertTrue(true);
