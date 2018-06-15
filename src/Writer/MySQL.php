@@ -20,7 +20,6 @@ class MySQL extends Writer implements WriterInterface
         'char', 'varchar', 'text', 'blob',
     ];
 
-
     /** @var \PDO */
     protected $db;
 
@@ -194,7 +193,11 @@ class MySQL extends Writer implements WriterInterface
 
     public function create(array $table): void
     {
-        $sql = "CREATE TABLE " . $this->escape($table['dbName']) . " (";
+        $sql = sprintf(
+            "CREATE %s TABLE `%s` (",
+            isset($table['temporary']) && $table['temporary'] === true ? 'TEMPORARY' : '',
+            $table['dbName']
+        );
 
         $columns = $table['items'];
         foreach ($columns as $k => $col) {
