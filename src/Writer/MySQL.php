@@ -128,6 +128,8 @@ class MySQL extends Writer implements WriterInterface
             " . $this->emptyToNullOrDefault($table)
         ;
 
+        $this->logger->info(sprintf('Loading data to table "%s"', $table['dbName']));
+
         try {
             $this->db->exec($query);
         } catch (\PDOException $e) {
@@ -255,7 +257,7 @@ class MySQL extends Writer implements WriterInterface
 
     public function upsert(array $table, string $targetTable): void
     {
-        $this->logger->info('Upserting table "' . $table['dbName'] . '".');
+        $this->logger->info(sprintf('Upserting table "%s" via "%s"', $targetTable, $table['dbName']));
 
         $columns = array_filter($table['items'], function ($item) {
             return $item['type'] !== 'IGNORE';
