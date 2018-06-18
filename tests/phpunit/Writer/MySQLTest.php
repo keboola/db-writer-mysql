@@ -217,6 +217,46 @@ class MySQLTest extends MySQLBaseTest
         $this->assertFileEquals($expected, $resFilename);
     }
 
+    public function testWriteNullValues(): void
+    {
+        $tables = $this->config['parameters']['tables'];
+
+        // simple table
+        $table = $tables[0];
+        $table['items'] = array_map(function ($column) {
+            $column['default'] = null;
+            return $column;
+        }, $table['items']);
+        $table['items'][2]['nullable'] = true;
+
+        $sourceTableId = $table['tableId'];
+        $outputTableName = $table['dbName'];
+        $sourceFilename = $this->dataDir . "/" . $sourceTableId . "_default.csv";
+
+        $this->writer->drop($outputTableName);
+        $this->writer->create($table);
+        $this->writer->write(new CsvFile(realpath($sourceFilename)), $table);
+
+        $conn = $this->writer->getConnection();
+        $stmt = $conn->query("SELECT * FROM $outputTableName");
+        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        // check nulls
+        $this->assertNull($res[1]['glasses']);
+        $this->assertNull($res[4]['glasses']);
+        $this->assertNull($res[8]['glasses']);
+
+        // check CSV
+        $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
+        $csv = new CsvFile($resFilename);
+        $csv->writeRow(["id","name","glasses"]);
+        foreach ($res as $row) {
+            $csv->writeRow($row);
+        }
+
+        $this->assertFileEquals($sourceFilename, $resFilename);
+    }
+
     public function testGetAllowedTypes(): void
     {
         $allowedTypes = $this->writer->getAllowedTypes();
