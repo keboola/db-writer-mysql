@@ -110,6 +110,19 @@ class MySQL extends Writer implements WriterInterface
         return $pdo;
     }
 
+    protected function exec(string $query): void
+    {
+        $this->logger->debug(sprintf('Executing query: "%s"', $query));
+
+        try {
+            $this->db->exec($query);
+        } catch (\PDOException $e) {
+            throw new UserException("Query failed: " . $e->getMessage(), 400, $e, [
+                'query' => $query,
+            ]);
+        }
+    }
+
     public function write(CsvFile $csv, array $table): void
     {
         $header = $csv->getHeader();
@@ -130,13 +143,7 @@ class MySQL extends Writer implements WriterInterface
 
         $this->logger->info(sprintf('Loading data to table "%s"', $table['dbName']));
 
-        try {
-            $this->db->exec($query);
-        } catch (\PDOException $e) {
-            throw new UserException("Query failed: " . $e->getMessage(), 400, $e, [
-                'query' => $query,
-            ]);
-        }
+        $this->exec($query);
     }
 
     protected function emptyToNullOrDefault(array $table): string
@@ -189,7 +196,7 @@ class MySQL extends Writer implements WriterInterface
 
     public function drop(string $tableName): void
     {
-        $this->db->exec(sprintf("DROP TABLE IF EXISTS %s;", $this->escape($tableName)));
+        $this->exec(sprintf("DROP TABLE IF EXISTS %s;", $this->escape($tableName)));
     }
 
     private function escape(string $obj): string
@@ -246,7 +253,7 @@ class MySQL extends Writer implements WriterInterface
         $sql = substr($sql, 0, -1);
         $sql .= ") DEFAULT CHARSET=$this->charset COLLATE {$this->charset}_unicode_ci";
 
-        $this->db->exec($sql);
+        $this->exec($sql);
     }
 
     public static function getAllowedTypes(): array
@@ -297,7 +304,7 @@ class MySQL extends Writer implements WriterInterface
           {$valuesClause}
         ";
 
-        $this->db->exec($query);
+        $this->exec($query);
 
         // drop temp table
         $this->drop($tableConfig['dbName']);
@@ -309,7 +316,7 @@ class MySQL extends Writer implements WriterInterface
         $columnsClause = implode(',', $dbColumns);
 
         // insert new data
-        $this->db->exec("
+        $this->exec("
           INSERT INTO {$this->escape($targetTable)} ({$columnsClause})
           SELECT * FROM {$this->escape($tableConfig['dbName'])}
         ");
