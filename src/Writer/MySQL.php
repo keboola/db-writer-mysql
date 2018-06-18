@@ -125,7 +125,7 @@ class MySQL extends Writer implements WriterInterface
             ESCAPED BY ''
             IGNORE 1 LINES
             (". implode(', ', $columnNames) . ")
-            " . $this->emptyToDefault($table)
+            " . $this->emptyToNullOrDefault($table)
         ;
 
         try {
@@ -137,26 +137,31 @@ class MySQL extends Writer implements WriterInterface
         }
     }
 
-    protected function emptyToDefault(array $table): string
+    protected function emptyToNullOrDefault(array $table): string
     {
-        $defaultCols = array_filter($table['items'], function ($column) {
-            return !empty($column['default']) && strtolower($column['type']) !== 'ignore';
+        $columnsWithNullOrDefault = array_filter($table['items'], function ($column) {
+            return strtolower($column['type']) !== 'ignore'
+                && (
+                    isset($column['default'])
+                    || (isset($column['nullable']) && $column['nullable'])
+                );
         });
 
-        if (empty($defaultCols)) {
+        if (empty($columnsWithNullOrDefault)) {
             return '';
         }
 
-        $defaultExpression = array_map(function ($column) {
+        $expressions = array_map(function ($column) {
             return sprintf(
-                "%s = IF(%s = '', '%s', %s)",
+                "%s = IF(%s = '', %s, %s)",
                 $this->escape($column['dbName']),
                 $this->escape($column['dbName']),
-                $column['default'],
+                isset($column['default']) ? "'" . $column['default'] . "'" : 'NULL',
                 $this->escape($column['dbName'])
             );
-        }, $defaultCols);
-        return 'SET ' . implode(',', $defaultExpression);
+        }, $columnsWithNullOrDefault);
+
+        return "SET " . implode(',', $expressions);
     }
 
     protected function columnNamesForLoad(array $table, array $header): array
