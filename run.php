@@ -5,7 +5,7 @@ declare(strict_types=1);
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
-use Keboola\DbWriter\Application;
+use Keboola\DbWriter\MySQLApplication;
 use Monolog\Formatter\LineFormatter;
 use Monolog\Handler\StreamHandler;
 use Monolog\Handler\NullHandler;
@@ -41,7 +41,7 @@ try {
 
     $action = isset($config['action']) ? $config['action'] : $action;
 
-    $app = new Application($config, $logger, new MySQLConfigDefinition());
+    $app = new MySQLApplication($config, $logger, new MySQLConfigDefinition());
 
     if ($app['action'] !== 'run') {
         $app['logger']->setHandlers(array(new NullHandler(Logger::INFO)));
