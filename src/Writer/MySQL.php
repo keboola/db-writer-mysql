@@ -142,11 +142,10 @@ class MySQL extends Writer implements WriterInterface
     protected function emptyToNullOrDefault(array $table): string
     {
         $columnsWithNullOrDefault = array_filter($table['items'], function ($column) {
-            return strtolower($column['type']) !== 'ignore'
-                && (
-                    isset($column['default'])
-                    || (isset($column['nullable']) && $column['nullable'])
-                );
+            $hasDefault = isset($column['default']);
+            $isNullable = isset($column['nullable']) && $column['nullable'];
+            $isIgnored = strtolower($column['type']) === 'ignore';
+            return !$isIgnored && ($hasDefault || $isNullable);
         });
 
         if (empty($columnsWithNullOrDefault)) {
@@ -158,7 +157,7 @@ class MySQL extends Writer implements WriterInterface
                 "%s = IF(%s = '', %s, %s)",
                 $this->escape($column['dbName']),
                 $this->escape($column['dbName']),
-                isset($column['default']) ? "'" . $column['default'] . "'" : 'NULL',
+                isset($column['default']) ? $this->db->quote($column['default']) : 'NULL',
                 $this->escape($column['dbName'])
             );
         }, $columnsWithNullOrDefault);
