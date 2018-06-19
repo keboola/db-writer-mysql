@@ -319,8 +319,6 @@ class MySQL extends Writer implements WriterInterface
           SELECT * FROM {$this->escape($tableConfig['dbName'])}
         ");
 
-        // drop temp table
-        $this->drop($tableConfig['dbName']);
         $this->logger->info('Table "' . $tableConfig['dbName'] . '" upserted.');
     }
 
