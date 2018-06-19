@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Keboola\DbWriter\Tests;
 
-use Keboola\DbWriter\Application;
 use Keboola\DbWriter\Configuration\MySQLConfigDefinition;
 use Keboola\DbWriter\Logger;
+use Keboola\DbWriter\MySQLApplication;
 use Keboola\DbWriter\Test\MySQLBaseTest;
 
 class SSLTest extends MySQLBaseTest
@@ -59,7 +59,7 @@ class SSLTest extends MySQLBaseTest
         ];
         unset($config['parameters']['tables']);
 
-        $app = new Application($config, new Logger($this->appName), new MySQLConfigDefinition());
+        $app = new MySQLApplication($config, new Logger($this->appName), new MySQLConfigDefinition());
 
         $response = $app->run();
 
