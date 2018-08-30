@@ -59,7 +59,7 @@ services:
       - mysql8
       - sshproxy
     environment:
-      - TARGETS=mysql8:3306,sshproxy:22
+      - TARGETS=mysql:3306,mysql8:3307,sshproxy:22
       - TIMEOUT=120
 
   mysql:
