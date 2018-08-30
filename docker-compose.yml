@@ -42,14 +42,14 @@ services:
     command: composer ci
     working_dir: /code
     environment:
-      DB_HOST: mysql8
+      DB_HOST: mysql
       DB_PORT: 3307
       DB_USER: root
       DB_PASSWORD: rootpassword
       DB_DATABASE: test
       SSH_KEY_PRIVATE: ${SSH_KEY_PRIVATE}
     links:
-      - mysql8
+      - mysql8:mysql
       - sshproxy
 
   wait:
@@ -74,8 +74,8 @@ services:
   mysql8:
     image: mysql:8
     volumes:
-        - ./tests/data/mysql8/ssl:/ssl-cert
-        - ./tests/data/mysql8/conf.d:/etc/mysql/conf.d
+        - ./tests/data/mysql/ssl:/ssl-cert
+        - ./tests/data/mysql/conf.d:/etc/mysql/conf.d
     environment:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: rootpassword
