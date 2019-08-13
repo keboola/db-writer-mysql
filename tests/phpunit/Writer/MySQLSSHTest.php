@@ -24,13 +24,15 @@ class MySQLSSHTest extends MySQLBaseTest
 
     public function setUp(): void
     {
+        var_dump($this->getPrivateKey());
+        var_dump($this->getPublicKey());
         $this->config = $this->getConfig();
         $this->config['parameters']['writer_class'] = 'MySQL';
         $this->config['parameters']['db']['ssh'] = [
             'enabled' => true,
             'keys' => [
                 '#private' => $this->getPrivateKey(),
-                'public' => '',
+                'public' => $this->getPublicKey(),
             ],
             'user' => 'root',
             'sshHost' => 'sshproxy',
@@ -46,6 +48,15 @@ class MySQLSSHTest extends MySQLBaseTest
 
         $writerFactory = new WriterFactory($this->config['parameters']);
         $this->writer = $writerFactory->create($logger);
+    }
+
+    public function getPrivateKey(): string
+    {
+        return file_get_contents('/root/.ssh/id_rsa');
+    }
+    public function getPublicKey(): string
+    {
+        return file_get_contents('/root/.ssh/id_rsa.pub');
     }
 
     public function testWriteMysql(): void

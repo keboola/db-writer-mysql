@@ -1,4 +1,5 @@
-FROM php:7-cli
+FROM tests-sshproxy AS sshproxy
+FROM php:7.1-cli
 ARG DEBIAN_FRONTEND=noninteractive
 ARG COMPOSER_FLAGS="--prefer-dist --no-interaction"
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -30,4 +31,5 @@ COPY . /code/
 # run normal composer - all deps are cached already
 RUN composer install $COMPOSER_FLAGS
 
+COPY --from=sshproxy /root/.ssh /root/.ssh
 CMD php ./run.php --data=/data
