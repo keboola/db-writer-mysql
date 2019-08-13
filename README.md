@@ -69,12 +69,8 @@ Imports CSV data into MySQL Database.
 
 1. Install dependencies
 
-        docker-composer run --rm dev composer install
+        docker-compose run --rm dev composer install
 
-2. Generate SSH key pair for SSH proxy:
-
-        source ./vendor/keboola/db-writer-common/tests/generate-ssh-keys.sh
-    
-3. Run tests:
+2. Run tests:
 
         docker-compose run --rm tests

@@ -3,12 +3,8 @@ sudo: required
 services:
   - docker
 
-install:
-  - docker build -t keboola/db-writer-mysql .
-  - docker run -v $(pwd):/code keboola/db-writer-mysql composer install --prefer-dist --no-interaction
-  - source ./vendor/keboola/db-writer-common/tests/generate-ssh-keys.sh
-
 script:
+  - docker-compose build
   - docker-compose run wait
   - docker-compose run tests
 

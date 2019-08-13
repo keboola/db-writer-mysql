@@ -13,9 +13,10 @@ services:
       DB_USER: root
       DB_PASSWORD: rootpassword
       DB_DATABASE: test
-      SSH_KEY_PRIVATE: ${SSH_KEY_PRIVATE}
     links:
       - mysql
+      - sshproxy
+    depends_on:
       - sshproxy
 
   tests:
@@ -29,9 +30,10 @@ services:
       DB_USER: root
       DB_PASSWORD: rootpassword
       DB_DATABASE: test
-      SSH_KEY_PRIVATE: ${SSH_KEY_PRIVATE}
     links:
       - mysql
+      - sshproxy
+    depends_on:
       - sshproxy
 
   wait:
@@ -53,9 +55,9 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
 
   sshproxy:
+    image: tests-sshproxy
     build: ./tests/env/sshproxy
-    command: sh -c 'echo $SSH_KEY_PUBLIC >> ~/.ssh/authorized_keys && /usr/sbin/sshd -D'
-    environment:
-      - SSH_KEY_PUBLIC
+    volumes:
+      - ./tests/env/sshproxy:/code
     ports:
       - "2222:22"
