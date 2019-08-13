@@ -96,6 +96,10 @@ class MySQL extends Writer implements WriterInterface
             $this->logger->info('Falling back to ' . $this->charset . ' charset');
             $pdo->exec("SET NAMES $this->charset;");
         }
+        $infile = $pdo->query("SHOW VARIABLES LIKE 'local_infile';")->fetch(\PDO::FETCH_ASSOC);
+        if ($infile['Value'] === 'OFF') {
+            throw new UserException("local_infile is disabled on server");
+        }
 
         if ($isSsl) {
             $status = $pdo->query("SHOW STATUS LIKE 'Ssl_cipher';")->fetch(\PDO::FETCH_ASSOC);
