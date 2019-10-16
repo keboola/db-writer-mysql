@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7de7c3606028152910654e821a2436cf",
+    "content-hash": "bd8a14a5b62a76cff593b812d460b025",
     "packages": [
         {
             "name": "keboola/csv",
@@ -54,16 +54,16 @@
         },
         {
             "name": "keboola/db-writer-common",
-            "version": "5.2.0",
+            "version": "5.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/db-writer-common.git",
-                "reference": "68174c6d604919083994f46d540266fcdd7a5a39"
+                "reference": "fd12c69578f44a5215b1fa8a6bc8cbdc3cd3b9a4"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/db-writer-common/zipball/68174c6d604919083994f46d540266fcdd7a5a39",
-                "reference": "68174c6d604919083994f46d540266fcdd7a5a39",
+                "url": "https://api.github.com/repos/keboola/db-writer-common/zipball/fd12c69578f44a5215b1fa8a6bc8cbdc3cd3b9a4",
+                "reference": "fd12c69578f44a5215b1fa8a6bc8cbdc3cd3b9a4",
                 "shasum": ""
             },
             "require": {
@@ -105,7 +105,7 @@
                 "library",
                 "writer"
             ],
-            "time": "2018-06-15T12:19:17+00:00"
+            "time": "2019-09-19T13:43:27+00:00"
         },
         {
             "name": "keboola/php-temp",
