@@ -14,10 +14,11 @@ class MySQLApplication extends Application
 
     public function __construct(array $config, Logger $logger)
     {
+        $action = !is_null($config['action']) ?: 'run';
         if (isset($config['parameters']['tables'])) {
             $configDefinition = new MySQLConfigDefinition();
         } else {
-            if ($config['action'] === 'run') {
+            if ($action === 'run') {
                 $configDefinition = new MySQLConfigRowDefinition;
             } else {
                 $configDefinition = new MySQLActionConfigRowDefinition();
