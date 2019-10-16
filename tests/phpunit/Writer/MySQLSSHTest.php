@@ -13,21 +13,13 @@ use Monolog\Handler\TestHandler;
 
 class MySQLSSHTest extends MySQLBaseTest
 {
-    /** @var MySQL */
-    private $writer;
-
-    /** @var array */
-    private $config;
 
     /** @var TestHandler */
     private $testHandler;
 
     public function setUp(): void
     {
-        var_dump($this->getPrivateKey());
-        var_dump($this->getPublicKey());
         $this->config = $this->getConfig();
-        $this->config['parameters']['writer_class'] = 'MySQL';
         $this->config['parameters']['db']['ssh'] = [
             'enabled' => true,
             'keys' => [

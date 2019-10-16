@@ -21,12 +21,23 @@ class EntrypointTest extends MySQLBaseTest
     public function testRunRowAction(): void
     {
         $config = $this->getConfig($this->dataDir . '/runRowAction');
-        $writer = $this->getWriter($config['parameters']);
-        $writer->drop($config['parameters']['dbName']);
+        $this->cleanup($config);
         $this->initFixtures($config, $this->dataDir . '/runRowAction');
 
         $process = $this->runProcess();
         $this->assertEquals(0, $process->getExitCode(), $process->getOutput());
+    }
+
+    public function testInvalidRowRowAction(): void
+    {
+
+        $config = $this->getConfig($this->dataDir . '/runRowAction');
+        unset($config['parameters']['tableId']);
+        $this->initFixtures($config, $this->dataDir . '/runRowAction');
+
+        $process = $this->runProcess();
+        $this->assertEquals(1, $process->getExitCode());
+        $this->assertEquals("The child node \"tableId\" at path \"parameters\" must be configured.\n", $process->getErrorOutput());
     }
 
     public function testConnectionAction(): void

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Keboola\DbWriter\Test;
 
+use Keboola\DbWriter\Writer\MySQL;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 
@@ -11,6 +12,12 @@ class MySQLBaseTest extends BaseTest
 {
     /** @var string */
     private $rootDir = __DIR__ . '/../../';
+
+    /** @var MySQL */
+    protected $writer;
+
+    /** @var array */
+    protected $config;
 
     /** @var string */
     protected $dataDir = __DIR__ . '/../../tests/data';
@@ -38,9 +45,9 @@ class MySQLBaseTest extends BaseTest
 
     protected function runProcess(): Process
     {
-        $process = new Process(sprintf('php %srun.php --data=%s 2>&1', $this->rootDir, $this->tmpDataDir));
+        $process = new Process(sprintf('php %srun.php --data=%s', $this->rootDir, $this->tmpDataDir));
         $process->setTimeout(300);
-        $process->mustRun();
+        $process->run();
 
         return $process;
     }
@@ -48,9 +55,13 @@ class MySQLBaseTest extends BaseTest
     protected function cleanup(array $config): void
     {
         $writer = $this->getWriter($config['parameters']);
-        $tables = $config['parameters']['tables'];
-        foreach ($tables as $table) {
-            $writer->drop($table['dbName']);
+        if (isset($config['parameters']['tables'])) {
+            $tables = $config['parameters']['tables'];
+            foreach ($tables as $table) {
+                $writer->drop($table['dbName']);
+            }
+        } elseif (isset($config['parameters']['dbName'])) {
+            $writer->drop($config['parameters']['dbName']);
         }
     }
 
@@ -64,6 +75,7 @@ class MySQLBaseTest extends BaseTest
         $config['parameters']['db']['host'] = $this->getEnv('DB_HOST');
         $config['parameters']['db']['port'] = $this->getEnv('DB_PORT');
         $config['parameters']['db']['database'] = $this->getEnv('DB_DATABASE');
+        $config['parameters']['writer_class'] = 'MySQL';
 
         return $config;
     }
