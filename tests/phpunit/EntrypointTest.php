@@ -18,6 +18,17 @@ class EntrypointTest extends MySQLBaseTest
         $this->assertEquals(0, $process->getExitCode(), $process->getOutput());
     }
 
+    public function testRunRowAction(): void
+    {
+        $config = $this->getConfig($this->dataDir . '/runRowAction');
+        $writer = $this->getWriter($config['parameters']);
+        $writer->drop($config['parameters']['dbName']);
+        $this->initFixtures($config, $this->dataDir . '/runRowAction');
+
+        $process = $this->runProcess();
+        $this->assertEquals(0, $process->getExitCode(), $process->getOutput());
+    }
+
     public function testConnectionAction(): void
     {
         $config = $this->getConfig($this->dataDir . '/connectionAction');
