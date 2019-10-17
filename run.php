@@ -41,7 +41,7 @@ try {
 
     $action = isset($config['action']) ? $config['action'] : $action;
 
-    $app = new MySQLApplication($config, $logger, new MySQLConfigDefinition());
+    $app = new MySQLApplication($config, $logger);
 
     if ($app['action'] !== 'run') {
         $app['logger']->setHandlers(array(new NullHandler(Logger::INFO)));

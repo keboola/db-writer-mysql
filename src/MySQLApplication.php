@@ -5,9 +5,28 @@ declare(strict_types=1);
 namespace Keboola\DbWriter;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Configuration\MySQLActionConfigRowDefinition;
+use Keboola\DbWriter\Configuration\MySQLConfigDefinition;
+use Keboola\DbWriter\Configuration\MySQLConfigRowDefinition;
 
 class MySQLApplication extends Application
 {
+
+    public function __construct(array $config, Logger $logger)
+    {
+        $action = !is_null($config['action']) ?: 'run';
+        if (isset($config['parameters']['tables'])) {
+            $configDefinition = new MySQLConfigDefinition();
+        } else {
+            if ($action === 'run') {
+                $configDefinition = new MySQLConfigRowDefinition;
+            } else {
+                $configDefinition = new MySQLActionConfigRowDefinition();
+            }
+        }
+        parent::__construct($config, $logger, $configDefinition);
+    }
+
     public function writeIncremental(CsvFile $csv, array $tableConfig): void
     {
         /** @var WriterInterface $writer */

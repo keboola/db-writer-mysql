@@ -11,16 +11,10 @@ use Keboola\DbWriter\Writer\MySQL;
 
 class MySQLTest extends MySQLBaseTest
 {
-    /** @var MySQL */
-    private $writer;
-
-    /** @var array */
-    private $config;
 
     public function setUp(): void
     {
         $this->config = $this->getConfig();
-        $this->config['parameters']['writer_class'] = 'MySQL';
         $this->writer = $this->getWriter($this->config['parameters']);
         $this->cleanup($this->config);
     }

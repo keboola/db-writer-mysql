@@ -59,7 +59,7 @@ class SSLTest extends MySQLBaseTest
         ];
         unset($config['parameters']['tables']);
 
-        $app = new MySQLApplication($config, new Logger($this->appName), new MySQLConfigDefinition());
+        $app = new MySQLApplication($config, new Logger($this->appName));
 
         $response = $app->run();
 
