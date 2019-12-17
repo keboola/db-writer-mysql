@@ -87,9 +87,6 @@ services:
       - --port=3307
 
   sshproxy:
-    image: tests-sshproxy
-    build: ./tests/env/sshproxy
-    volumes:
-      - ./tests/env/sshproxy:/code
+    image: keboola/db-component-ssh-proxy:latest
     ports:
       - "2222:22"
