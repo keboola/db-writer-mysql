@@ -16,10 +16,10 @@
         "ext-json": "*",
         "ext-mbstring": "*",
         "keboola/csv": "^1.4",
-        "keboola/db-writer-common": "^5.4",
+        "keboola/db-writer-common": "^5.5",
         "keboola/php-temp": "^1.0",
         "symfony/config": "^4.1",
-        "symfony/filesystem": "^4.1",
+        "symfony/filesystem": "^4.3",
         "symfony/process": "^3.4"
     },
     "require-dev": {
