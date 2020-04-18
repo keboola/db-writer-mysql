@@ -71,7 +71,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
 
   mysql8:
-    image: mysql:8
+    image: mysql:8.0.18
     volumes:
         - ./tests/data/mysql/ssl:/ssl-cert
         - ./tests/data/mysql/conf.d:/etc/mysql/conf.d
