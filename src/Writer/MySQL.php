@@ -164,10 +164,21 @@ class MySQL extends Writer implements WriterInterface
         }
 
         $expressions = array_map(function ($column) {
+            switch (strtolower($column['type'])) {
+                case 'date':
+                    $emptyValue = '0000-00-00';
+                    break;
+                case 'datetime':
+                    $emptyValue = '0000-00-00 00:00:00';
+                    break;
+                default:
+                    $emptyValue = '';
+            }
             return sprintf(
-                "%s = IF(%s = '', %s, %s)",
+                "%s = IF(%s = '%s', %s, %s)",
                 $this->escape($column['dbName']),
                 $this->escape($column['dbName']),
+                $emptyValue,
                 isset($column['default']) ? $this->db->quote($column['default']) : 'NULL',
                 $this->escape($column['dbName'])
             );
