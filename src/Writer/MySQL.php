@@ -111,6 +111,11 @@ class MySQL extends Writer implements WriterInterface
             }
         }
 
+        // for mysql8 remove sql_mode "NO_ZERO_DATE"
+        if (version_compare($this->getVersion($pdo), '8.0.0', '>')) {
+            $pdo->query("SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'NO_ZERO_DATE',''));");
+        }
+
         return $pdo;
     }
 
@@ -404,5 +409,11 @@ class MySQL extends Writer implements WriterInterface
     public function validateTable(array $tableConfig): void
     {
         // TODO: Implement validateTable() method.
+    }
+
+    private function getVersion(\PDO $pdo): string
+    {
+        $stmt = $pdo->query('SHOW VARIABLES LIKE "version";')->fetch(\PDO::FETCH_ASSOC);
+        return $stmt['Value'];
     }
 }
