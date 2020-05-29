@@ -222,10 +222,22 @@ class MySQLTest extends MySQLBaseTest
             return $column;
         }, $table['items']);
         $table['items'][2]['nullable'] = true;
+        $table['items'][] = [
+            'name' => 'date',
+            'dbName' => 'date',
+            'type' => 'date',
+            'nullable' => true,
+        ];
+        $table['items'][] = [
+            'name' => 'datetime',
+            'dbName' => 'datetime',
+            'type' => 'datetime',
+            'nullable' => true,
+        ];
 
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/" . $sourceTableId . "_default.csv";
+        $sourceFilename = $this->dataDir . "/" . $sourceTableId . "_with_null_values.csv";
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -243,7 +255,7 @@ class MySQLTest extends MySQLBaseTest
         // check CSV
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["id","name","glasses"]);
+        $csv->writeRow(["id","name","glasses","date","datetime"]);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }

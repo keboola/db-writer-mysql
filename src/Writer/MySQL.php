@@ -111,6 +111,11 @@ class MySQL extends Writer implements WriterInterface
             }
         }
 
+        // for mysql8 remove sql_mode "NO_ZERO_DATE"
+        if (version_compare($this->getVersion($pdo), '8.0.0', '>')) {
+            $pdo->query("SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'NO_ZERO_DATE',''));");
+        }
+
         return $pdo;
     }
 
@@ -164,10 +169,21 @@ class MySQL extends Writer implements WriterInterface
         }
 
         $expressions = array_map(function ($column) {
+            switch (strtolower($column['type'])) {
+                case 'date':
+                    $emptyValue = '0000-00-00';
+                    break;
+                case 'datetime':
+                    $emptyValue = '0000-00-00 00:00:00';
+                    break;
+                default:
+                    $emptyValue = '';
+            }
             return sprintf(
-                "%s = IF(%s = '', %s, %s)",
+                "%s = IF(%s = '%s', %s, %s)",
                 $this->escape($column['dbName']),
                 $this->escape($column['dbName']),
+                $emptyValue,
                 isset($column['default']) ? $this->db->quote($column['default']) : 'NULL',
                 $this->escape($column['dbName'])
             );
@@ -393,5 +409,11 @@ class MySQL extends Writer implements WriterInterface
     public function validateTable(array $tableConfig): void
     {
         // TODO: Implement validateTable() method.
+    }
+
+    private function getVersion(\PDO $pdo): string
+    {
+        $stmt = $pdo->query('SHOW VARIABLES LIKE "version";')->fetch(\PDO::FETCH_ASSOC);
+        return $stmt['Value'];
     }
 }
