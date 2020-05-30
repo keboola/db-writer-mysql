@@ -172,19 +172,22 @@ class MySQL extends Writer implements WriterInterface
             switch (strtolower($column['type'])) {
                 case 'date':
                     $emptyValue = '0000-00-00';
+                    $defaultValue = !empty($column['default']) ? $this->db->quote($column['default']) : 'NULL';
                     break;
                 case 'datetime':
                     $emptyValue = '0000-00-00 00:00:00';
+                    $defaultValue = !empty($column['default']) ? $this->db->quote($column['default']) : 'NULL';
                     break;
                 default:
                     $emptyValue = '';
+                    $defaultValue = isset($column['default']) ? $this->db->quote($column['default']) : 'NULL';
             }
             return sprintf(
                 "%s = IF(%s = '%s', %s, %s)",
                 $this->escape($column['dbName']),
                 $this->escape($column['dbName']),
                 $emptyValue,
-                isset($column['default']) ? $this->db->quote($column['default']) : 'NULL',
+                $defaultValue,
                 $this->escape($column['dbName'])
             );
         }, $columnsWithNullOrDefault);
