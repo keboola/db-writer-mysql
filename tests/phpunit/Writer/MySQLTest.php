@@ -227,6 +227,7 @@ class MySQLTest extends MySQLBaseTest
             'dbName' => 'date',
             'type' => 'date',
             'nullable' => true,
+            'default' => '',
         ];
         $table['items'][] = [
             'name' => 'datetime',
