@@ -180,7 +180,13 @@ class MySQL extends Writer implements WriterInterface
                     break;
                 default:
                     $emptyValue = '';
-                    $defaultValue = isset($column['default']) ? $this->db->quote($column['default']) : 'NULL';
+                    if (!empty($column['default'])) {
+                        $defaultValue = $this->db->quote($column['default']);
+                    } elseif (!empty($column['nullable'])) {
+                        $defaultValue = 'NULL';
+                    } else {
+                        $defaultValue = '';
+                    }
             }
             return sprintf(
                 "%s = IF(%s = '%s', %s, %s)",

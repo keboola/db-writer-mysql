@@ -235,6 +235,13 @@ class MySQLTest extends MySQLBaseTest
             'type' => 'datetime',
             'nullable' => true,
         ];
+        $table['items'][] = [
+            'name' => 'nullablestring',
+            'dbName' => 'nullablestring',
+            'type' => 'varchar',
+            'size' => '255',
+            'nullable' => true,
+        ];
 
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
@@ -252,11 +259,12 @@ class MySQLTest extends MySQLBaseTest
         $this->assertNull($res[1]['glasses']);
         $this->assertNull($res[4]['glasses']);
         $this->assertNull($res[8]['glasses']);
+        $this->assertNull($res[8]['nullablestring']);
 
         // check CSV
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["id","name","glasses","date","datetime"]);
+        $csv->writeRow(["id","name","glasses","date","datetime","nullablestring"]);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
