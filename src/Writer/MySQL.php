@@ -113,7 +113,7 @@ class MySQL extends Writer implements WriterInterface
 
         // for mysql8 remove sql_mode "NO_ZERO_DATE"
         if (version_compare($this->getVersion($pdo), '8.0.0', '>')) {
-            $pdo->query("SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'NO_ZERO_DATE',''));");
+            $pdo->query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'NO_ZERO_DATE',''));");
         }
 
         return $pdo;
