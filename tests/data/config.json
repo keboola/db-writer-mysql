@@ -28,8 +28,8 @@
                         "dbName": "name",
                         "type": "varchar",
                         "size": 255,
-                        "nullable": null,
-                        "default": null
+                        "nullable": false,
+                        "default": ""
                     },
                     {
                         "name": "glasses",
