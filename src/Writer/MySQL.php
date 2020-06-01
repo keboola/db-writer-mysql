@@ -185,7 +185,7 @@ class MySQL extends Writer implements WriterInterface
                     } elseif (!empty($column['nullable'])) {
                         $defaultValue = 'NULL';
                     } else {
-                        $defaultValue = '';
+                        $defaultValue = $this->db->quote('');
                     }
             }
             return sprintf(
