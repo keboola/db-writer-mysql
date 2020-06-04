@@ -1,0 +1,3 @@
+"id","col-null-null","col-true-null","col-true-empty-string","col-true-string","col-false-null","col-false-empty-string","col-false-string"
+"1","Test sloupecku null-null","Test sloupecku true-null","Test sloupecku true-empty-string","Test sloupecku true-string","Test sloupecku false-null","Test sloupecku false-empty-string","Test sloupecku false-string"
+"2","","","","","","",""

@@ -1,0 +1,95 @@
+{
+  "parameters": {
+    "db": {
+      "host": "mysql",
+      "port": "3306",
+      "database": "test",
+      "user": "root",
+      "#password": "rootpassword"
+    },
+    "tableId": "simple-int",
+    "dbName": "simple-int",
+    "items": [
+      {
+        "name": "id",
+        "dbName": "id",
+        "type": "int",
+        "size": null,
+        "nullable": null,
+        "default": null
+      },
+      {
+        "name": "col-null-null",
+        "dbName": "col-null-null",
+        "type": "int",
+        "size": 255,
+        "nullable": null,
+        "default": null
+      },
+      {
+        "name": "col-true-null",
+        "dbName": "col-true-null",
+        "type": "int",
+        "size": 255,
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "col-true-empty-string",
+        "dbName": "col-true-empty-string",
+        "type": "int",
+        "size": 255,
+        "nullable": true,
+        "default": ""
+      },
+      {
+        "name": "col-true-string",
+        "dbName": "col-true-string",
+        "type": "int",
+        "size": 255,
+        "nullable": true,
+        "default": "123"
+      },
+      {
+        "name": "col-true-zero-value",
+        "dbName": "col-true-zero-value",
+        "type": "int",
+        "size": 255,
+        "nullable": true,
+        "default": "0"
+      },
+      {
+        "name": "col-false-null",
+        "dbName": "col-false-null",
+        "type": "int",
+        "size": 255,
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "col-false-empty-string",
+        "dbName": "col-false-empty-string",
+        "type": "int",
+        "size": 255,
+        "nullable": false,
+        "default": ""
+      },
+      {
+        "name": "col-false-string",
+        "dbName": "col-false-string",
+        "type": "int",
+        "size": 255,
+        "nullable": false,
+        "default": "123"
+      },
+      {
+        "name": "col-false-zero-value",
+        "dbName": "col-false-zero-value",
+        "type": "int",
+        "size": 255,
+        "nullable": false,
+        "default": "0"
+      }
+    ]
+  }
+}
