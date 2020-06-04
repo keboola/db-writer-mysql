@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Keboola\DbWriter\Writer;
 
 use Keboola\Csv\CsvFile;
+use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Writer;
 use Keboola\DbWriter\WriterInterface;
@@ -12,6 +13,10 @@ use Keboola\Temp\Temp;
 
 class MySQL extends Writer implements WriterInterface
 {
+
+    /** @var array $variableColumns */
+    private $variableColumns = [];
+
     /** @var array */
     private static $allowedTypes = [
         'int', 'smallint', 'bigint',
@@ -158,10 +163,7 @@ class MySQL extends Writer implements WriterInterface
     protected function emptyToNullOrDefault(array $table): string
     {
         $columnsWithNullOrDefault = array_filter($table['items'], function ($column) {
-            $hasDefault = isset($column['default']);
-            $isNullable = isset($column['nullable']) && $column['nullable'];
-            $isIgnored = strtolower($column['type']) === 'ignore';
-            return !$isIgnored && ($hasDefault || $isNullable);
+            return $this->hasColumnNullOrDefault($column);
         });
 
         if (empty($columnsWithNullOrDefault)) {
@@ -171,16 +173,13 @@ class MySQL extends Writer implements WriterInterface
         $expressions = array_map(function ($column) {
             switch (strtolower($column['type'])) {
                 case 'date':
-                    $emptyValue = '0000-00-00';
-                    $defaultValue = !empty($column['default']) ? $this->db->quote($column['default']) : 'NULL';
-                    break;
                 case 'datetime':
-                    $emptyValue = '0000-00-00 00:00:00';
+                    $emptyValue = '';
                     $defaultValue = !empty($column['default']) ? $this->db->quote($column['default']) : 'NULL';
                     break;
                 default:
                     $emptyValue = '';
-                    if (!empty($column['default'])) {
+                    if (($column['default'] ?? '') !== '') {
                         $defaultValue = $this->db->quote($column['default']);
                     } elseif (!empty($column['nullable'])) {
                         $defaultValue = 'NULL';
@@ -191,10 +190,10 @@ class MySQL extends Writer implements WriterInterface
             return sprintf(
                 "%s = IF(%s = '%s', %s, %s)",
                 $this->escape($column['dbName']),
-                $this->escape($column['dbName']),
+                $this->getVariableColumn($column['dbName']),
                 $emptyValue,
                 $defaultValue,
-                $this->escape($column['dbName'])
+                $this->getVariableColumn($column['dbName'])
             );
         }, $columnsWithNullOrDefault);
 
@@ -214,6 +213,9 @@ class MySQL extends Writer implements WriterInterface
             // name by mapping
             foreach ($table['items'] as $tableColumn) {
                 if ($tableColumn['name'] === $column) {
+                    if ($this->hasColumnNullOrDefault($tableColumn)) {
+                        return $this->generateColumnVariable($tableColumn['dbName']);
+                    }
                     return $this->escape($tableColumn['dbName']);
                 }
             }
@@ -221,6 +223,29 @@ class MySQL extends Writer implements WriterInterface
             // origin sapi name
             return $this->escape($column);
         }, $header);
+    }
+
+    private function generateColumnVariable(string $columnName): string
+    {
+        $variable = uniqid('@columnVar_');
+        $this->variableColumns[$columnName] = $variable;
+        return $variable;
+    }
+
+    private function getVariableColumn(string $columnName): string
+    {
+        if (!isset($this->variableColumns[$columnName])) {
+            throw new ApplicationException(sprintf('Variable for column "%s" does not exists.', $columnName));
+        }
+        return $this->variableColumns[$columnName];
+    }
+
+    private function hasColumnNullOrDefault(array $column): bool
+    {
+        $hasDefault = isset($column['default']);
+        $isNullable = isset($column['nullable']) && $column['nullable'];
+        $isIgnored = strtolower($column['type']) === 'ignore';
+        return !$isIgnored && ($hasDefault || $isNullable);
     }
 
     public function drop(string $tableName): void
