@@ -1,0 +1,4 @@
+"id","col-null-null","col-true-null","col-true-empty-string","col-true-string","col-true-zero-value","col-false-null","col-false-empty-string","col-false-string","col-false-zero-value"
+"1","0","1","2","3","4","5","6","7","8"
+"2","0","0","0","0","0","0","0","0","0"
+"3","0","","","123","0","0","0","123","0"

@@ -1,0 +1,79 @@
+{
+  "parameters": {
+    "db": {
+      "host": "mysql",
+      "port": "3306",
+      "database": "test",
+      "user": "root",
+      "#password": "rootpassword"
+    },
+    "tableId": "simple-date",
+    "dbName": "simple-date",
+    "items": [
+      {
+        "name": "id",
+        "dbName": "id",
+        "type": "int",
+        "size": null,
+        "nullable": null,
+        "default": null
+      },
+      {
+        "name": "col-null-null",
+        "dbName": "col-null-null",
+        "type": "date",
+        "size": null,
+        "nullable": null,
+        "default": null
+      },
+      {
+        "name": "col-true-null",
+        "dbName": "col-true-null",
+        "type": "date",
+        "size": null,
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "col-true-empty-string",
+        "dbName": "col-true-empty-string",
+        "type": "date",
+        "size": null,
+        "nullable": true,
+        "default": ""
+      },
+      {
+        "name": "col-true-string",
+        "dbName": "col-true-string",
+        "type": "date",
+        "size": null,
+        "nullable": true,
+        "default": "2020-01-01"
+      },
+      {
+        "name": "col-false-null",
+        "dbName": "col-false-null",
+        "type": "date",
+        "size": null,
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "col-false-empty-string",
+        "dbName": "col-false-empty-string",
+        "type": "date",
+        "size": null,
+        "nullable": false,
+        "default": ""
+      },
+      {
+        "name": "col-false-string",
+        "dbName": "col-false-string",
+        "type": "date",
+        "size": null,
+        "nullable": false,
+        "default": "2020-01-01"
+      }
+    ]
+  }
+}

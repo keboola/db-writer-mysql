@@ -20,10 +20,11 @@
         "keboola/php-temp": "^1.0",
         "symfony/config": "^4.1",
         "symfony/filesystem": "^4.3",
-        "symfony/process": "^3.4"
+        "symfony/process": "^4.0"
     },
     "require-dev": {
         "keboola/coding-standard": "^2.0",
+        "keboola/datadir-tests": "^3.0",
         "phpstan/phpstan-shim": "^0.9.2",
         "phpunit/phpunit": "^7.0"
     },
@@ -34,11 +35,17 @@
     },
     "autoload-dev": {
         "psr-4": {
+            "Keboola\\DbWriter\\FunctionalTests\\": "tests/functional/",
             "Keboola\\DbWriter\\Tests\\": "tests/phpunit/"
         }
     },
     "scripts": {
-        "tests": "phpunit",
+        "tests-phpunit": "phpunit",
+        "tests-datadir": "phpunit tests/functional",
+        "tests": [
+            "@tests-phpunit",
+            "@tests-datadir"
+        ],
         "phpcs": "phpcs -n --ignore=vendor --extensions=php .",
         "phpcbf": "phpcbf -n --ignore=vendor --extensions=php .",
         "phpstan": "phpstan analyse ./src ./tests --level=0 --no-progress",
