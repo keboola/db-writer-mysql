@@ -55,7 +55,7 @@ class DatadirTest extends AbstractDatadirTestCase
     private function replaceDatabaseConfig(Temp $tempDatadir): void
     {
         $configFile = $tempDatadir->getTmpFolder() . '/config.json';
-        $config = json_decode( (string) file_get_contents($configFile), true);
+        $config = json_decode((string) file_get_contents($configFile), true);
         $config['parameters'] = array_merge(
             $config['parameters'],
             [
