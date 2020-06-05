@@ -174,11 +174,9 @@ class MySQL extends Writer implements WriterInterface
             switch (strtolower($column['type'])) {
                 case 'date':
                 case 'datetime':
-                    $emptyValue = '';
                     $defaultValue = !empty($column['default']) ? $this->db->quote($column['default']) : 'NULL';
                     break;
                 default:
-                    $emptyValue = '';
                     if (($column['default'] ?? '') !== '') {
                         $defaultValue = $this->db->quote($column['default']);
                     } elseif (!empty($column['nullable'])) {
@@ -188,10 +186,9 @@ class MySQL extends Writer implements WriterInterface
                     }
             }
             return sprintf(
-                "%s = IF(%s = '%s', %s, %s)",
+                "%s = IF(%s = '', %s, %s)",
                 $this->escape($column['dbName']),
                 $this->getVariableColumn($column['dbName']),
-                $emptyValue,
                 $defaultValue,
                 $this->getVariableColumn($column['dbName'])
             );
