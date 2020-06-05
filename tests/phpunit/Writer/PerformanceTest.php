@@ -16,11 +16,11 @@ class PerformanceTest extends MySQLBaseTest
 {
     "parameters": {
         "db": {
-            "host": "mysql",
-            "port": "3306",
-            "database": "test",
-            "user": "root",
-            "#password": "rootpassword"
+            "host": "%s",
+            "port": "%s",
+            "database": "%s",
+            "user": "%s",
+            "#password": "%s"
         },
         "export": true,
         "tableId": "performance",
@@ -110,7 +110,14 @@ class PerformanceTest extends MySQLBaseTest
     }
 }
 JSON;
-
+        $config = sprintf(
+            $config,
+            getenv('DB_HOST'),
+            getenv('DB_PORT'),
+            getenv('DB_DATABASE'),
+            getenv('DB_USER'),
+            getenv('DB_PASSWORD')
+        );
         $this->initFixtures(json_decode($config, true), $this->dataDir . '/performance');
         $csv = new CsvFile($this->tmpDataDir . '/in/tables/performance.csv');
         $csv->writeRow([
