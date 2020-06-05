@@ -243,7 +243,7 @@ class MySQL extends Writer implements WriterInterface
     private function hasColumnNullOrDefault(array $column): bool
     {
         $hasDefault = isset($column['default']);
-        $isNullable = isset($column['nullable']) && $column['nullable'];
+        $isNullable = $column['nullable'] ?? false;
         $isIgnored = strtolower($column['type']) === 'ignore';
         return !$isIgnored && ($hasDefault || $isNullable);
     }
