@@ -208,10 +208,10 @@ class MySQL extends Writer implements WriterInterface
             }
 
             // name by mapping
-            foreach ($table['items'] as $tableColumn) {
+            foreach ($table['items'] as $key => $tableColumn) {
                 if ($tableColumn['name'] === $column) {
                     if ($this->hasColumnNullOrDefault($tableColumn)) {
-                        return $this->generateColumnVariable($tableColumn['dbName']);
+                        return $this->generateColumnVariable($tableColumn['dbName'], $key);
                     }
                     return $this->escape($tableColumn['dbName']);
                 }
@@ -222,9 +222,9 @@ class MySQL extends Writer implements WriterInterface
         }, $header);
     }
 
-    private function generateColumnVariable(string $columnName): string
+    private function generateColumnVariable(string $columnName, int $columnKey): string
     {
-        $variable = uniqid('@columnVar_');
+        $variable = '@columnVar_' . $columnKey;
         $this->variableColumns[$columnName] = $variable;
         return $variable;
     }
