@@ -123,13 +123,13 @@ class DatadirTest extends AbstractDatadirTestCase
     {
         $tables = $this->connection->query(
             sprintf(
-                'SELECT table_name FROM information_schema.tables WHERE table_schema = \'%s\';',
+                'SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = \'%s\';',
                 $this->config['database']
             )
         )->fetchAll(PDO::FETCH_ASSOC);
 
         return array_map(function ($item) {
-            return $item['table_name'];
+            return $item['TABLE_NAME'];
         }, $tables);
     }
 
