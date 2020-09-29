@@ -75,5 +75,15 @@
         "default": "2020-01-01"
       }
     ]
+  },
+  "storage": {
+    "input": {
+      "tables": [
+        {
+          "source": "simple-date",
+          "destination": "simple-date.csv"
+        }
+      ]
+    }
   }
 }

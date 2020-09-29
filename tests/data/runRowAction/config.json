@@ -39,5 +39,15 @@
                 "default": null
             }
         ]
+    },
+    "storage": {
+        "input": {
+            "tables": [
+                {
+                    "source": "simple",
+                    "destination": "simple.csv"
+                }
+            ]
+        }
     }
 }

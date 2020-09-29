@@ -107,6 +107,16 @@ class PerformanceTest extends MySQLBaseTest
                 "default": ""
             }
         ]
+    },
+    "storage": {
+        "input": {
+            "tables": [
+                {
+                    "source": "performance",
+                    "destination": "performance.csv"
+                }
+            ]
+        }
     }
 }
 JSON;

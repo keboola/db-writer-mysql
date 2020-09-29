@@ -75,5 +75,15 @@
         "default": "2020-01-01 12:01:02"
       }
     ]
+  },
+  "storage": {
+    "input": {
+      "tables": [
+        {
+          "source": "simple-datetime",
+          "destination": "simple-datetime.csv"
+        }
+      ]
+    }
   }
 }
