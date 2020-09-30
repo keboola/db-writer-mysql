@@ -91,5 +91,15 @@
         "default": "0"
       }
     ]
+  },
+  "storage": {
+    "input": {
+      "tables": [
+        {
+          "source": "simple-int",
+          "destination": "simple-int.csv"
+        }
+      ]
+    }
   }
 }

@@ -75,5 +75,15 @@
         "default": "test string"
       }
     ]
+  },
+  "storage": {
+    "input": {
+      "tables": [
+        {
+          "source": "simple-string",
+          "destination": "simple-string.csv"
+        }
+      ]
+    }
   }
 }
