@@ -212,13 +212,22 @@ class MySQL extends Writer implements WriterInterface
     protected function replaceColumnsValues(array $table): Iterator
     {
         foreach ($table['items'] as $column) {
-            switch ($column['type']) {
+            switch (strtolower($column['type'])) {
                 case 'bit':
-                    yield sprintf(
-                        "%s = cast(%s as signed)",
-                        $this->escape($column['dbName']),
-                        $this->getVariableColumn($column['dbName'])
-                    );
+                    if ($column['nullable']) {
+                        yield sprintf(
+                            "%s = IF(%s = '', NULL, cast(%s as signed))",
+                            $this->escape($column['dbName']),
+                            $this->getVariableColumn($column['dbName']),
+                            $this->getVariableColumn($column['dbName'])
+                        );
+                    } else {
+                        yield sprintf(
+                            "%s = cast(%s as signed)",
+                            $this->escape($column['dbName']),
+                            $this->getVariableColumn($column['dbName'])
+                        );
+                    }
             }
         }
     }
