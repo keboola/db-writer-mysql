@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Keboola\DbWriter\Writer;
 
+use Iterator;
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
@@ -152,25 +153,37 @@ class MySQL extends Writer implements WriterInterface
             ESCAPED BY ''
             IGNORE 1 LINES
             (". implode(', ', $columnNames) . ")
-            " . $this->emptyToNullOrDefault($table)
+            " . $this->getExpressionReplace($table)
         ;
 
         $this->logger->info(sprintf('Loading data to table "%s"', $table['dbName']));
-
         $this->exec($query);
     }
 
-    protected function emptyToNullOrDefault(array $table): string
+    protected function getExpressionReplace(array $table): string
+    {
+        $expressionsNullOrDefault = $this->emptyToNullOrDefault($table);
+        $expressionsReplaceValues = $this->replaceColumnsValues($table);
+
+        $expressions = array_merge(
+            iterator_to_array($expressionsNullOrDefault),
+            iterator_to_array($expressionsReplaceValues)
+        );
+
+        if (!$expressions) {
+            return '';
+        }
+
+        return "SET " . implode(',', ($expressions));
+    }
+
+    protected function emptyToNullOrDefault(array $table): Iterator
     {
         $columnsWithNullOrDefault = array_filter($table['items'], function ($column) {
             return $this->hasColumnNullOrDefault($column);
         });
 
-        if (empty($columnsWithNullOrDefault)) {
-            return '';
-        }
-
-        $expressions = array_map(function ($column) {
+        foreach ($columnsWithNullOrDefault as $column) {
             switch (strtolower($column['type'])) {
                 case 'date':
                 case 'datetime':
@@ -185,18 +198,31 @@ class MySQL extends Writer implements WriterInterface
                         $defaultValue = $this->db->quote('');
                     }
             }
-            return sprintf(
+
+            yield sprintf(
                 "%s = IF(%s = '', %s, %s)",
                 $this->escape($column['dbName']),
                 $this->getVariableColumn($column['dbName']),
                 $defaultValue,
                 $this->getVariableColumn($column['dbName'])
             );
-        }, $columnsWithNullOrDefault);
-
-        return "SET " . implode(',', $expressions);
+        }
     }
 
+    protected function replaceColumnsValues(array $table): Iterator
+    {
+        foreach ($table['items'] as $column) {
+            switch ($column['type']) {
+                case 'bit':
+                    yield sprintf(
+                        "%s = cast(%s as signed)",
+                        $this->escape($column['dbName']),
+                        $this->getVariableColumn($column['dbName'])
+                    );
+            }
+        }
+    }
+    
     protected function columnNamesForLoad(array $table, array $header): array
     {
         return array_map(function ($column) use ($table) {
@@ -210,7 +236,9 @@ class MySQL extends Writer implements WriterInterface
             // name by mapping
             foreach ($table['items'] as $key => $tableColumn) {
                 if ($tableColumn['name'] === $column) {
-                    if ($this->hasColumnNullOrDefault($tableColumn)) {
+                    if ($this->hasColumnNullOrDefault($tableColumn) ||
+                        $this->hasColumnForReplaceValues($tableColumn)
+                    ) {
                         return $this->generateColumnVariable($tableColumn['dbName'], $key);
                     }
                     return $this->escape($tableColumn['dbName']);
@@ -243,6 +271,11 @@ class MySQL extends Writer implements WriterInterface
         $isNullable = $column['nullable'] ?? false;
         $isIgnored = strtolower($column['type']) === 'ignore';
         return !$isIgnored && ($hasDefault || $isNullable);
+    }
+
+    private function hasColumnForReplaceValues(array $column): bool
+    {
+        return in_array(strtolower($column['type']), ['bit']);
     }
 
     public function drop(string $tableName): void
