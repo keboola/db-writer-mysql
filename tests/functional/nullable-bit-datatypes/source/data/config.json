@@ -1,0 +1,31 @@
+{
+  "parameters": {
+    "db": {
+      "host": "mysql",
+      "port": "3306",
+      "database": "test",
+      "user": "root",
+      "#password": "rootpassword"
+    },
+    "tableId": "simple-bit",
+    "dbName": "simple-bit",
+    "items": [
+      {
+        "name": "bit_column",
+        "dbName": "bit_column",
+        "type": "bit",
+        "nullable": true
+      }
+    ]
+  },
+  "storage": {
+    "input": {
+      "tables": [
+        {
+          "source": "simple-bit",
+          "destination": "simple-bit.csv"
+        }
+      ]
+    }
+  }
+}
