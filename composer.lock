@@ -162,16 +162,16 @@
         },
         {
             "name": "keboola/ssh-tunnel",
-            "version": "2.0.2",
+            "version": "2.0.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/ssh-tunnel.git",
-                "reference": "cd48c73efb22815e26b9f146775b4608478477da"
+                "reference": "c6d228d742068305c1c4bfda0e5429cfb415e740"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/ssh-tunnel/zipball/cd48c73efb22815e26b9f146775b4608478477da",
-                "reference": "cd48c73efb22815e26b9f146775b4608478477da",
+                "url": "https://api.github.com/repos/keboola/ssh-tunnel/zipball/c6d228d742068305c1c4bfda0e5429cfb415e740",
+                "reference": "c6d228d742068305c1c4bfda0e5429cfb415e740",
                 "shasum": ""
             },
             "require": {
@@ -199,7 +199,11 @@
                 }
             ],
             "description": "Simple library for SSH tunneling",
-            "time": "2020-04-23T10:25:32+00:00"
+            "support": {
+                "issues": "https://github.com/keboola/ssh-tunnel/issues",
+                "source": "https://github.com/keboola/ssh-tunnel/tree/2.0.3"
+            },
+            "time": "2021-09-13T10:54:39+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -2348,5 +2352,5 @@
         "ext-mbstring": "*"
     },
     "platform-dev": [],
-    "plugin-api-version": "1.1.0"
+    "plugin-api-version": "2.1.0"
 }
