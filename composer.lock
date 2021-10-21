@@ -162,16 +162,16 @@
         },
         {
             "name": "keboola/ssh-tunnel",
-            "version": "2.0.3",
+            "version": "2.0.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/ssh-tunnel.git",
-                "reference": "c6d228d742068305c1c4bfda0e5429cfb415e740"
+                "reference": "0738a9c806092f7d5bc81d5edda796e9caf7a507"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/ssh-tunnel/zipball/c6d228d742068305c1c4bfda0e5429cfb415e740",
-                "reference": "c6d228d742068305c1c4bfda0e5429cfb415e740",
+                "url": "https://api.github.com/repos/keboola/ssh-tunnel/zipball/0738a9c806092f7d5bc81d5edda796e9caf7a507",
+                "reference": "0738a9c806092f7d5bc81d5edda796e9caf7a507",
                 "shasum": ""
             },
             "require": {
@@ -201,9 +201,9 @@
             "description": "Simple library for SSH tunneling",
             "support": {
                 "issues": "https://github.com/keboola/ssh-tunnel/issues",
-                "source": "https://github.com/keboola/ssh-tunnel/tree/2.0.3"
+                "source": "https://github.com/keboola/ssh-tunnel/tree/2.0.4"
             },
-            "time": "2021-09-13T10:54:39+00:00"
+            "time": "2021-10-21T06:07:45+00:00"
         },
         {
             "name": "monolog/monolog",
