@@ -10,10 +10,16 @@ use Keboola\DbWriter\Exception\ApplicationException;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Writer;
 use Keboola\DbWriter\WriterInterface;
+use Keboola\SSHTunnel\SSH;
+use Keboola\SSHTunnel\SSHException;
 use Keboola\Temp\Temp;
+use Retry\BackOff\ExponentialBackOffPolicy;
+use Retry\Policy\SimpleRetryPolicy;
+use Retry\RetryProxy;
 
 class MySQL extends Writer implements WriterInterface
 {
+    public const DEFAULT_MAX_TRIES = 5;
 
     /** @var array $variableColumns */
     private $variableColumns = [];
@@ -231,7 +237,7 @@ class MySQL extends Writer implements WriterInterface
             }
         }
     }
-    
+
     protected function columnNamesForLoad(array $table, array $header): array
     {
         return array_map(function ($column) use ($table) {
@@ -488,5 +494,69 @@ class MySQL extends Writer implements WriterInterface
     {
         $stmt = $pdo->query('SHOW VARIABLES LIKE "version";')->fetch(\PDO::FETCH_ASSOC);
         return $stmt['Value'];
+    }
+
+    public function createSshTunnel(array $dbConfig): array
+    {
+        $sshConfig = $dbConfig['ssh'];
+
+        // check params
+        foreach (['keys', 'sshHost'] as $k) {
+            if (empty($sshConfig[$k])) {
+                throw new UserException(sprintf("Parameter %s is missing.", $k));
+            }
+        }
+
+        if (empty($sshConfig['user'])) {
+            $sshConfig['user'] = $dbConfig['user'];
+        }
+        if (empty($sshConfig['localPort'])) {
+            $sshConfig['localPort'] = 33006;
+        }
+        if (empty($sshConfig['remoteHost'])) {
+            $sshConfig['remoteHost'] = $dbConfig['host'];
+        }
+        if (empty($sshConfig['remotePort'])) {
+            $sshConfig['remotePort'] = $dbConfig['port'];
+        }
+        if (empty($sshConfig['sshPort'])) {
+            $sshConfig['sshPort'] = 22;
+        }
+
+        $sshConfig['privateKey'] = empty($sshConfig['keys']['#private'])
+            ?$sshConfig['keys']['private']
+            :$sshConfig['keys']['#private'];
+
+        $tunnelParams = array_intersect_key($sshConfig, array_flip([
+            'user', 'sshHost', 'sshPort', 'localPort', 'remoteHost', 'remotePort', 'privateKey',
+        ]));
+
+        $this->logger->info("Creating SSH tunnel to '" . $tunnelParams['sshHost'] . "'");
+
+        $simplyRetryPolicy = new SimpleRetryPolicy(
+            self::DEFAULT_MAX_TRIES,
+            [SSHException::class,\Throwable::class]
+        );
+
+        $exponentialBackOffPolicy = new ExponentialBackOffPolicy();
+        $proxy = new RetryProxy(
+            $simplyRetryPolicy,
+            $exponentialBackOffPolicy,
+            $this->logger
+        );
+
+        try {
+            $proxy->call(function () use ($tunnelParams): void {
+                $ssh = new SSH();
+                $ssh->openTunnel($tunnelParams);
+            });
+        } catch (SSHException $e) {
+            throw new UserException($e->getMessage());
+        }
+
+        $dbConfig['host'] = '127.0.0.1';
+        $dbConfig['port'] = $sshConfig['localPort'];
+
+        return $dbConfig;
     }
 }
