@@ -63,6 +63,29 @@
                         "default": null
                     }
                 ]
+            },
+            {
+                "tableId": "overflow",
+                "dbName": "overflow",
+                "export": false,
+                "items": [
+                    {
+                        "name": "col1",
+                        "dbName": "col1",
+                        "type": "varchar",
+                        "size": 255,
+                        "nullable": null,
+                        "default": null
+                    },
+                    {
+                        "name": "col2",
+                        "dbName": "col2",
+                        "type": "tinyint",
+                        "size": 1,
+                        "nullable": null,
+                        "default": null
+                    }
+                ]
             }
         ]
     },
@@ -76,6 +99,10 @@
                 {
                     "source": "special",
                     "destination": "special.csv"
+                },
+                {
+                    "source": "overflow",
+                    "destination": "overflow.csv"
                 }
             ]
         }
