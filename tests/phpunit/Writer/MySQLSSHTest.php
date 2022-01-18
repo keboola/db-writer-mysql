@@ -7,7 +7,6 @@ namespace Keboola\DbWriter\Tests\Writer;
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Test\MySQLBaseTest;
-use Keboola\DbWriter\Writer\MySQL;
 use Keboola\DbWriter\WriterFactory;
 use Monolog\Handler\TestHandler;
 
