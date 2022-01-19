@@ -25,11 +25,19 @@ class DatadirTest extends AbstractDatadirTestCase
     /** @var string $dataDir */
     private $dataDir;
 
+    public function  __construct(
+        ?string $name = null,
+        array $data = [],
+        string $dataName = ''
+    ) {
+        parent::__construct($name, $data, $dataName);
+        $this->config = $this->getDatabaseConfig();
+        $this->connection = $this->createConnection($this->config);
+    }
+
     public function setUp(): void
     {
         parent::setUp();
-        $this->config = $this->getDatabaseConfig();
-        $this->connection = $this->createConnection($this->config);
         $this->dropTables();
     }
 
@@ -48,6 +56,9 @@ class DatadirTest extends AbstractDatadirTestCase
         $process = $this->runScript($tempDatadir->getTmpFolder());
 
         $this->dumpTables($tempDatadir->getTmpFolder());
+
+        var_dump($specification->getExpectedStderr());
+        exit();
 
         $this->assertMatchesSpecification($specification, $process, $tempDatadir->getTmpFolder());
     }
@@ -77,7 +88,7 @@ class DatadirTest extends AbstractDatadirTestCase
     protected function getDataProviders(): array
     {
         return [
-            new DatadirTestProvider($this->getTestFileDir()),
+            new DatadirTestProvider($this->getMysqlVersion(), $this->getTestFileDir()),
         ];
     }
 
@@ -99,6 +110,12 @@ class DatadirTest extends AbstractDatadirTestCase
         $runProcess->setTimeout(0);
         $runProcess->run();
         return $runProcess;
+    }
+
+    private function getMysqlVersion(): int
+    {
+        $version = $this->connection->query('SELECT VERSION();')->fetch();
+        return (int) $version[0];
     }
 
     private function dropTables(): void
