@@ -25,7 +25,7 @@ class DatadirTest extends AbstractDatadirTestCase
     /** @var string $dataDir */
     private $dataDir;
 
-    public function  __construct(
+    public function __construct(
         ?string $name = null,
         array $data = [],
         string $dataName = ''
@@ -56,9 +56,6 @@ class DatadirTest extends AbstractDatadirTestCase
         $process = $this->runScript($tempDatadir->getTmpFolder());
 
         $this->dumpTables($tempDatadir->getTmpFolder());
-
-        var_dump($specification->getExpectedStderr());
-        exit();
 
         $this->assertMatchesSpecification($specification, $process, $tempDatadir->getTmpFolder());
     }

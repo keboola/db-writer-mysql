@@ -574,12 +574,17 @@ class MySQLTest extends MySQLBaseTest
         }
 
         $records = $testHandler->getRecords();
-        $this->assertCount(8, $records);
+        $messagesFound = 0;
+        foreach ($records as $record) {
+            if (Logger::WARNING === $record['level']) {
+                if (preg_match('/Data truncated for column \'col1\' at row 1/iu', $record['message'])
+                    || preg_match('/Out of range value for column \'col2\' at row 1/iu', $record['message'])
+                ) {
+                    $messagesFound++;
+                }
+            }
+        }
 
-        $this->assertEquals(Logger::WARNING, $records[6]['level']);
-        $this->assertRegExp('/Data truncated for column \'col1\' at row 1/ui', $records[6]['message']);
-
-        $this->assertEquals(Logger::WARNING, $records[7]['level']);
-        $this->assertRegExp('/Out of range value for column \'col2\' at row 1/ui', $records[7]['message']);
+        $this->assertEquals(2, $messagesFound);
     }
 }

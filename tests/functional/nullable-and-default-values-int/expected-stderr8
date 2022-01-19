@@ -1,0 +1,13 @@
+Unknown table 'test.simple-int'
+Integer display width is deprecated and will be removed in a future release.
+Integer display width is deprecated and will be removed in a future release.
+Integer display width is deprecated and will be removed in a future release.
+Integer display width is deprecated and will be removed in a future release.
+Integer display width is deprecated and will be removed in a future release.
+Integer display width is deprecated and will be removed in a future release.
+Integer display width is deprecated and will be removed in a future release.
+Integer display width is deprecated and will be removed in a future release.
+Integer display width is deprecated and will be removed in a future release.
+Incorrect integer value: '' for column 'col-null-null' at row 3
+Incorrect integer value: '' for column 'col-false-null' at row 3
+Incorrect integer value: '' for column 'col-false-empty-string' at row 3
