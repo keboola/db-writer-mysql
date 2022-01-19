@@ -21,9 +21,6 @@ class MySQL extends Writer implements WriterInterface
 {
     public const DEFAULT_MAX_TRIES = 5;
 
-    private const ER_WARN_DATA_OUT_OF_RANGE = 1264;
-    private const WARN_DATA_TRUNCATED = 1265;
-
     /** @var array $variableColumns */
     private $variableColumns = [];
 
@@ -569,9 +566,7 @@ class MySQL extends Writer implements WriterInterface
         $stmt = $this->db->query("SHOW WARNINGS;");
         $warnings = $stmt->fetchAll();
         foreach ($warnings as $warning) {
-            if (in_array((int) $warning['Code'], [self::ER_WARN_DATA_OUT_OF_RANGE, self::WARN_DATA_TRUNCATED], true)) {
-                $this->logger->warning($warning['Message']);
-            }
+            $this->logger->warning($warning['Message']);
         }
     }
 }
