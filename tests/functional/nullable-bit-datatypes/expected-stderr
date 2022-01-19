@@ -1,0 +1,5 @@
+Unknown table 'test.simple-bit'
+Data too long for column 'bit_column' at row 1
+Data too long for column 'bit_column' at row 2
+Data too long for column 'bit_column' at row 3
+Data too long for column 'bit_column' at row 4
