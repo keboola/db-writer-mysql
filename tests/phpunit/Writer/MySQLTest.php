@@ -6,8 +6,10 @@ namespace Keboola\DbWriter\Tests\Writer;
 
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Exception\UserException;
+use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Test\MySQLBaseTest;
-use Keboola\DbWriter\Writer\MySQL;
+use Keboola\DbWriter\WriterFactory;
+use Monolog\Handler\TestHandler;
 
 class MySQLTest extends MySQLBaseTest
 {
@@ -536,5 +538,53 @@ class MySQLTest extends MySQLBaseTest
         $tableConfigWithOtherPrimaryKeys['primaryKey'] = ['code'];
         $this->writer->create($tableConfigWithOtherPrimaryKeys);
         $this->writer->checkKeys($tableConfig['primaryKey'], $tableConfig['dbName']);
+    }
+
+    public function testLogWhenValueInsertedOverflowInNonStrictSqlMode(): void
+    {
+        $testHandler = new TestHandler();
+
+        $logger = new Logger('wr-db-mysql-overflow-test');
+        $logger->setHandlers([$testHandler]);
+
+        $writerFactory = new WriterFactory($this->config['parameters']);
+        $this->writer = $writerFactory->create($logger);
+
+        $tables = $this->config['parameters']['tables'];
+
+        // overflow table
+        $table = $tables[2];
+        $sourceTableId = $table['tableId'];
+        $outputTableName = $table['dbName'];
+        $sourceFilename = $this->dataDir . "/" . $sourceTableId . ".csv";
+
+        $this->writer->drop($outputTableName);
+        $this->writer->create($table);
+        $this->writer->write(new CsvFile(realpath($sourceFilename)), $table);
+
+        $conn = $this->writer->getConnection();
+        $stmt = $conn->query("SELECT * FROM $outputTableName");
+        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
+        $csv = new CsvFile($resFilename);
+        $csv->writeRow(["col1","col2"]);
+        foreach ($res as $row) {
+            $csv->writeRow($row);
+        }
+
+        $records = $testHandler->getRecords();
+        $messagesFound = 0;
+        foreach ($records as $record) {
+            if (Logger::WARNING === $record['level']) {
+                if (preg_match('/Data truncated for column \'col1\' at row 1/iu', $record['message'])
+                    || preg_match('/Out of range value for column \'col2\' at row 1/iu', $record['message'])
+                ) {
+                    $messagesFound++;
+                }
+            }
+        }
+
+        $this->assertEquals(2, $messagesFound);
     }
 }

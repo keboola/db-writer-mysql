@@ -17,9 +17,13 @@ class DatadirTestProvider extends DatadirTestsFromDirectoryProvider
     /** @var DatadirTestSpecification[][] */
     protected $datapoints;
 
-    public function __construct(string $testDirectory = 'tests/functional')
+    /** @var int $mysqlVersion */
+    private $mysqlVersion;
+
+    public function __construct(int $mysqlVersion, string $testDirectory = 'tests/functional')
     {
         parent::__construct($testDirectory);
+        $this->mysqlVersion = $mysqlVersion;
         $this->testDirectory = $testDirectory;
     }
 
@@ -47,14 +51,18 @@ class DatadirTestProvider extends DatadirTestsFromDirectoryProvider
         $outTemplateDir = $workingDirectory . '/expected/data/out';
 
         // Added, load stdout from file
-        if (file_exists($expectedStdoutFile)) {
+        if (file_exists($expectedStdoutFile . $this->mysqlVersion)) {
+            $expectedStdout = (string) file_get_contents($expectedStdoutFile . $this->mysqlVersion);
+        } elseif (file_exists($expectedStdoutFile)) {
             $expectedStdout = (string) file_get_contents($expectedStdoutFile);
         } else {
             $expectedStdout = null;
         }
 
         // Added, load stderr from file
-        if (file_exists($expectedStderrFile)) {
+        if (file_exists($expectedStderrFile . $this->mysqlVersion)) {
+            $expectedStderr = (string) file_get_contents($expectedStderrFile . $this->mysqlVersion);
+        } elseif (file_exists($expectedStderrFile)) {
             $expectedStderr = (string) file_get_contents($expectedStderrFile);
         } else {
             $expectedStderr = ''; // expected empty stderr if file not specified

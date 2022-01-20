@@ -7,7 +7,6 @@ namespace Keboola\DbWriter\Tests\Writer;
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Test\MySQLBaseTest;
-use Keboola\DbWriter\Writer\MySQL;
 use Keboola\DbWriter\WriterFactory;
 use Monolog\Handler\TestHandler;
 
@@ -137,8 +136,6 @@ class MySQLSSHTest extends MySQLBaseTest
         $this->assertEquals($srcArr, $resArr);
 
         $records = $this->testHandler->getRecords();
-
-        $this->assertCount(14, $records);
 
         $this->assertArrayHasKey('message', $records[0]);
         $this->assertArrayHasKey('level', $records[0]);

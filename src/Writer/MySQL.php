@@ -137,6 +137,7 @@ class MySQL extends Writer implements WriterInterface
 
         try {
             $this->db->exec($query);
+            $this->logMysqlWarnings();
         } catch (\PDOException $e) {
             throw new UserException("Query failed: " . $e->getMessage(), 400, $e, [
                 'query' => $query,
@@ -558,5 +559,14 @@ class MySQL extends Writer implements WriterInterface
         $dbConfig['port'] = $sshConfig['localPort'];
 
         return $dbConfig;
+    }
+
+    protected function logMysqlWarnings(): void
+    {
+        $stmt = $this->db->query("SHOW WARNINGS;");
+        $warnings = $stmt->fetchAll();
+        foreach ($warnings as $warning) {
+            $this->logger->warning($warning['Message']);
+        }
     }
 }
