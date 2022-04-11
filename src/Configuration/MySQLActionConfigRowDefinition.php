@@ -60,7 +60,7 @@ class MySQLActionConfigRowDefinition extends ConfigDefinition
                 ->booleanNode('enabled')->end()
                 ->scalarNode('ca')->end()
                 ->scalarNode('cert')->end()
-                ->scalarNode('key')->end()
+                ->scalarNode('#key')->end()
                 ->scalarNode('cipher')->end()
             ->end()
         ;
