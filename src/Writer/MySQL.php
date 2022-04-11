@@ -71,8 +71,8 @@ class MySQL extends Writer implements WriterInterface
 
             $temp = new Temp('wr-db-mysql');
 
-            if (!empty($ssl['key'])) {
-                $options[\PDO::MYSQL_ATTR_SSL_KEY] = $this->createSSLFile($ssl['key'], $temp);
+            if (!empty($ssl['#key'])) {
+                $options[\PDO::MYSQL_ATTR_SSL_KEY] = $this->createSSLFile($ssl['#key'], $temp);
                 $isSsl = true;
             }
             if (!empty($ssl['cert'])) {
