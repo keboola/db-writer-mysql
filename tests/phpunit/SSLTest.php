@@ -55,7 +55,7 @@ class SSLTest extends MySQLBaseTest
             'enabled' => true,
             'ca' => file_get_contents($this->dataDir . '/mysql/ssl/ca.pem'),
             'cert' => file_get_contents($this->dataDir . '/mysql/ssl/client-cert.pem'),
-            'key' => file_get_contents($this->dataDir . '/mysql/ssl/client-key.pem'),
+            '#key' => file_get_contents($this->dataDir . '/mysql/ssl/client-key.pem'),
         ];
         unset($config['parameters']['tables']);
 
