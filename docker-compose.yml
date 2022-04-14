@@ -30,6 +30,7 @@ services:
     image: waisbrot/wait
     depends_on:
       - mysql
+      - mysql-ssl
       - sshproxy
     environment:
       - TARGETS=mysql:3306,mysql-ssl:3306,sshproxy:22
@@ -47,7 +48,7 @@ services:
     command: mysqld --local-infile --port=3306 --default-authentication-plugin=mysql_native_password
     volumes:
       - ./docker/ssl/certificates:/ssl-cert
-      - ./docker/mysql-ssl/5.7/conf.d:/etc/mysql/conf.d
+      - ./docker/mysql-ssl/${MYSQL_VERSION}/conf.d:/etc/mysql/conf.d
     environment:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: rootpassword
