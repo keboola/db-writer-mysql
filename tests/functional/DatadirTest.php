@@ -9,7 +9,7 @@ use Keboola\DatadirTests\AbstractDatadirTestCase;
 use Keboola\DatadirTests\DatadirTestSpecificationInterface;
 use Keboola\DatadirTests\DatadirTestsProviderInterface;
 use Keboola\Temp\Temp;
-use \PDO;
+use PDO;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 
@@ -163,7 +163,7 @@ class DatadirTest extends AbstractDatadirTestCase
     private function createConnection(array $config): PDO
     {
         $dsn = sprintf(
-            "mysql:host=%s;port=%s;dbname=%s",
+            'mysql:host=%s;port=%s;dbname=%s',
             $config['host'],
             $config['port'],
             $config['database']

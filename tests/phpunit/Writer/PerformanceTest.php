@@ -172,7 +172,7 @@ JSON;
         $startTime = microtime(true);
         $process = $this->runProcess();
         $stopTime = microtime(true);
-        self::assertLessThan(40, round($stopTime-$startTime));
+        self::assertLessThan(50, round($stopTime-$startTime));
         self::assertEquals(0, $process->getExitCode(), $process->getOutput() . $process->getErrorOutput());
     }
 }

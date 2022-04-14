@@ -10,6 +10,7 @@ use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Test\MySQLBaseTest;
 use Keboola\DbWriter\WriterFactory;
 use Monolog\Handler\TestHandler;
+use PDO;
 
 class MySQLTest extends MySQLBaseTest
 {
@@ -24,21 +25,21 @@ class MySQLTest extends MySQLBaseTest
     public function testDrop(): void
     {
         $conn = $this->writer->getConnection();
-        $this->writer->drop("dropMe");
+        $this->writer->drop('dropMe');
 
-        $conn->exec("CREATE TABLE dropMe (
+        $conn->exec('CREATE TABLE dropMe (
           id INT PRIMARY KEY,
           firstname VARCHAR(30) NOT NULL,
-          lastname VARCHAR(30) NOT NULL)");
+          lastname VARCHAR(30) NOT NULL)');
 
-        $this->writer->drop("dropMe");
+        $this->writer->drop('dropMe');
 
-        $stmt = $conn->query("SELECT Distinct TABLE_NAME FROM information_schema.TABLES");
+        $stmt = $conn->query('SELECT Distinct TABLE_NAME FROM information_schema.TABLES');
         $res = $stmt->fetchAll();
 
         $tableExists = false;
         foreach ($res as $r) {
-            if ($r[0] == "dropMe") {
+            if ($r[0] === 'dropMe') {
                 $tableExists = true;
                 break;
             }
@@ -55,14 +56,14 @@ class MySQLTest extends MySQLBaseTest
             $this->writer->create($table);
         }
 
-        /** @var \PDO $conn */
+        /** @var PDO $conn */
         $conn = $this->writer->getConnection();
-        $stmt = $conn->query("SELECT Distinct TABLE_NAME FROM information_schema.TABLES");
+        $stmt = $conn->query('SELECT Distinct TABLE_NAME FROM information_schema.TABLES');
         $res = $stmt->fetchAll();
 
         $tableExits = false;
         foreach ($res as $r) {
-            if ($r['TABLE_NAME'] == $tables[0]['dbName']) {
+            if ($r['TABLE_NAME'] === $tables[0]['dbName']) {
                 $tableExits = true;
                 break;
             }
@@ -81,14 +82,14 @@ class MySQLTest extends MySQLBaseTest
             $this->writer->create($table);
         }
 
-        /** @var \PDO $conn */
+        /** @var PDO $conn */
         $conn = $this->writer->getConnection();
-        $stmt = $conn->query("SELECT Distinct TABLE_NAME FROM information_schema.TABLES");
+        $stmt = $conn->query('SELECT Distinct TABLE_NAME FROM information_schema.TABLES');
         $res = $stmt->fetchAll();
 
         $tableExits = false;
         foreach ($res as $r) {
-            if ($r['TABLE_NAME'] == $tables[0]['dbName']) {
+            if ($r['TABLE_NAME'] === $tables[0]['dbName']) {
                 $tableExits = true;
                 break;
             }
@@ -105,7 +106,7 @@ class MySQLTest extends MySQLBaseTest
         $table = $tables[0];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/" . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . '.csv';
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -113,11 +114,11 @@ class MySQLTest extends MySQLBaseTest
 
         $conn = $this->writer->getConnection();
         $stmt = $conn->query("SELECT * FROM $outputTableName");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["id","name","glasses"]);
+        $csv->writeRow(['id','name','glasses']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
@@ -128,7 +129,7 @@ class MySQLTest extends MySQLBaseTest
         $table = $tables[1];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/" . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . '.csv';
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -136,11 +137,11 @@ class MySQLTest extends MySQLBaseTest
 
         $conn = $this->writer->getConnection();
         $stmt = $conn->query("SELECT * FROM $outputTableName");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp-2');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["col1","col2"]);
+        $csv->writeRow(['col1','col2']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
@@ -151,7 +152,7 @@ class MySQLTest extends MySQLBaseTest
         $table = $tables[0];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/" . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . '.csv';
 
         $table['items'][2]['type'] = 'IGNORE';
 
@@ -161,7 +162,7 @@ class MySQLTest extends MySQLBaseTest
 
         $conn = $this->writer->getConnection();
         $stmt = $conn->query("SELECT * FROM $outputTableName");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $resArr = [];
         foreach ($res as $row) {
@@ -191,7 +192,7 @@ class MySQLTest extends MySQLBaseTest
         $table = $tables[0];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/" . $sourceTableId . "_default.csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . '_default.csv';
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -199,16 +200,16 @@ class MySQLTest extends MySQLBaseTest
 
         $conn = $this->writer->getConnection();
         $stmt = $conn->query("SELECT * FROM $outputTableName");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["id","name","glasses"]);
+        $csv->writeRow(['id','name','glasses']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
 
-        $expected = $this->dataDir . "/" . $sourceTableId . ".csv";
+        $expected = $this->dataDir . '/' . $sourceTableId . '.csv';
 
         $this->assertFileEquals($expected, $resFilename);
     }
@@ -247,7 +248,7 @@ class MySQLTest extends MySQLBaseTest
 
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/" . $sourceTableId . "_with_null_values.csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . '_with_null_values.csv';
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -255,7 +256,7 @@ class MySQLTest extends MySQLBaseTest
 
         $conn = $this->writer->getConnection();
         $stmt = $conn->query("SELECT * FROM $outputTableName");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         // check nulls
         $this->assertNull($res[1]['glasses']);
@@ -266,7 +267,7 @@ class MySQLTest extends MySQLBaseTest
         // check CSV
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["id","name","glasses","date","datetime","nullablestring"]);
+        $csv->writeRow(['id','name','glasses','date','datetime','nullablestring']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
@@ -292,7 +293,7 @@ class MySQLTest extends MySQLBaseTest
         $tables = $this->config['parameters']['tables'];
 
         $table = $tables[0];
-        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $table['tableId'] . '.csv';
         $targetTable = $table;
         $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
 
@@ -301,22 +302,22 @@ class MySQLTest extends MySQLBaseTest
         $this->writer->write(new CsvFile($sourceFilename), $targetTable);
 
         // second write
-        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . "_increment.csv";
+        $sourceFilename = $this->dataDir . '/' . $table['tableId'] . '_increment.csv';
         $this->writer->create($table);
         $this->writer->write(new CsvFile($sourceFilename), $table);
         $this->writer->upsert($table, $targetTable['dbName']);
 
         $stmt = $conn->query("SELECT * FROM {$targetTable['dbName']}");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["id", "name", "glasses"]);
+        $csv->writeRow(['id', 'name', 'glasses']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
 
-        $expectedFilename = $this->dataDir . "/" . $table['tableId'] . "_merged.csv";
+        $expectedFilename = $this->dataDir . '/' . $table['tableId'] . '_merged.csv';
 
         $this->assertFileEquals($expectedFilename, $resFilename);
     }
@@ -329,7 +330,7 @@ class MySQLTest extends MySQLBaseTest
         $table = $tables[0];
         $table['primaryKey'] = [];
 
-        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $table['tableId'] . '.csv';
         $targetTable = $table;
         $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
 
@@ -338,22 +339,22 @@ class MySQLTest extends MySQLBaseTest
         $this->writer->write(new CsvFile($sourceFilename), $targetTable);
 
         // second write
-        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . "_increment.csv";
+        $sourceFilename = $this->dataDir . '/' . $table['tableId'] . '_increment.csv';
         $this->writer->create($table);
         $this->writer->write(new CsvFile($sourceFilename), $table);
         $this->writer->upsert($table, $targetTable['dbName']);
 
         $stmt = $conn->query("SELECT * FROM {$targetTable['dbName']}");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["id", "name", "glasses"]);
+        $csv->writeRow(['id', 'name', 'glasses']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
 
-        $expectedFilename = $this->dataDir . "/" . $table['tableId'] . "_merged_no_pk.csv";
+        $expectedFilename = $this->dataDir . '/' . $table['tableId'] . '_merged_no_pk.csv';
 
         $this->assertFileEquals($expectedFilename, $resFilename);
     }
@@ -366,7 +367,7 @@ class MySQLTest extends MySQLBaseTest
         $table = $tables[0];
         $table['items'] = array_reverse($table['items']);
 
-        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $table['tableId'] . '.csv';
         $targetTable = $table;
         $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
 
@@ -375,20 +376,18 @@ class MySQLTest extends MySQLBaseTest
         $this->writer->write(new CsvFile($sourceFilename), $targetTable);
 
         // second write
-        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . "_increment.csv";
+        $sourceFilename = $this->dataDir . '/' . $table['tableId'] . '_increment.csv';
 
         $this->writer->create($table);
         $this->writer->write(new CsvFile($sourceFilename), $table);
         $this->writer->upsert($table, $targetTable['dbName']);
 
-
-        $expectedFilename = $this->dataDir . "/" . $table['tableId'] . "_merged.csv";
+        $expectedFilename = $this->dataDir . '/' . $table['tableId'] . '_merged.csv';
         $expectedFile = new CsvFile($expectedFilename);
         $header = $expectedFile->getHeader();
 
-
-        $stmt = $conn->query("SELECT " . implode(', ', $header) . " FROM {$targetTable['dbName']}");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $stmt = $conn->query('SELECT ' . implode(', ', $header) . " FROM {$targetTable['dbName']}");
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
@@ -425,7 +424,7 @@ class MySQLTest extends MySQLBaseTest
             }
         }
 
-        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $table['tableId'] . '.csv';
         $targetTable = $table;
         $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
 
@@ -434,18 +433,17 @@ class MySQLTest extends MySQLBaseTest
         $this->writer->write(new CsvFile($sourceFilename), $targetTable);
 
         // second write
-        $sourceFilename = $this->dataDir . "/" . $table['tableId'] . "_increment.csv";
+        $sourceFilename = $this->dataDir . '/' . $table['tableId'] . '_increment.csv';
 
         $this->writer->create($table);
         $this->writer->write(new CsvFile($sourceFilename), $table);
         $this->writer->upsert($table, $targetTable['dbName']);
 
-
-        $expectedFilename = $this->dataDir . "/" . $table['tableId'] . "_merged.csv";
+        $expectedFilename = $this->dataDir . '/' . $table['tableId'] . '_merged.csv';
         $expectedCsv = new CsvFile($expectedFilename);
 
         // prepare validation file
-        $expectedHeaderMap = array();
+        $expectedHeaderMap = [];
         foreach ($table['items'] as $column) {
             if ($column['type'] === 'IGNORE') {
                 continue;
@@ -474,8 +472,8 @@ class MySQLTest extends MySQLBaseTest
             $tmpExpectedCsv->writeRow($newRow);
         }
 
-        $stmt = $conn->query("SELECT " . implode(', ', $expectedHeaderMap) . " FROM {$targetTable['dbName']}");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $stmt = $conn->query('SELECT ' . implode(', ', $expectedHeaderMap) . " FROM {$targetTable['dbName']}");
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
@@ -531,7 +529,7 @@ class MySQLTest extends MySQLBaseTest
     public function testCheckKeysError(): void
     {
         $this->expectException(get_class(new UserException()));
-        $this->expectExceptionMessage("Primary key(s) in configuration does NOT match with keys in DB table.");
+        $this->expectExceptionMessage('Primary key(s) in configuration does NOT match with keys in DB table.');
         $tableConfig = $this->config['parameters']['tables'][0];
         $tableConfigWithOtherPrimaryKeys = $tableConfig;
         $tableConfigWithOtherPrimaryKeys['items'][0]['dbName'] = 'code';
@@ -556,7 +554,7 @@ class MySQLTest extends MySQLBaseTest
         $table = $tables[2];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . "/" . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . '.csv';
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -564,11 +562,11 @@ class MySQLTest extends MySQLBaseTest
 
         $conn = $this->writer->getConnection();
         $stmt = $conn->query("SELECT * FROM $outputTableName");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["col1","col2"]);
+        $csv->writeRow(['col1','col2']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
@@ -576,7 +574,7 @@ class MySQLTest extends MySQLBaseTest
         $records = $testHandler->getRecords();
         $messagesFound = 0;
         foreach ($records as $record) {
-            if (Logger::WARNING === $record['level']) {
+            if ($record['level'] === Logger::WARNING) {
                 if (preg_match('/Data truncated for column \'col1\' at row 1/iu', $record['message'])
                     || preg_match('/Out of range value for column \'col2\' at row 1/iu', $record['message'])
                 ) {

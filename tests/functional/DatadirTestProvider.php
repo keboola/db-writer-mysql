@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Keboola\DbWriter\FunctionalTests;
 
+use InvalidArgumentException;
 use Keboola\DatadirTests\DatadirTestsFromDirectoryProvider;
 use Keboola\DatadirTests\DatadirTestSpecification;
 use Keboola\DatadirTests\DatadirTestSpecificationInterface;
@@ -73,7 +74,7 @@ class DatadirTestProvider extends DatadirTestsFromDirectoryProvider
             if (preg_match('~^[012]$~', $returnCode)) {
                 $expectedReturnCode = (int) $returnCode;
             } else {
-                throw new \InvalidArgumentException(sprintf(
+                throw new InvalidArgumentException(sprintf(
                     '%s: Expecting invalid return code (%s). Possible codes are: 0, 1, 2.',
                     $name,
                     $returnCode
