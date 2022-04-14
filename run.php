@@ -7,11 +7,10 @@ use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\MySQLApplication;
 use Monolog\Formatter\LineFormatter;
-use Monolog\Handler\StreamHandler;
 use Monolog\Handler\NullHandler;
-use Keboola\DbWriter\Configuration\MySQLConfigDefinition;
+use Monolog\Handler\StreamHandler;
 
-require_once(dirname(__FILE__) . "/vendor/autoload.php");
+require_once(dirname(__FILE__) . '/vendor/autoload.php');
 
 $criticalHandler = new StreamHandler('php://stderr');
 $criticalHandler->setBubble(false);
@@ -31,11 +30,11 @@ $logger->setHandlers([$criticalHandler, $errorHandler, $logHandler]);
 $action = 'run';
 
 try {
-    $arguments = getopt("d::", ["data::"]);
-    if (!isset($arguments["data"])) {
+    $arguments = getopt('d::', ['data::']);
+    if (!isset($arguments['data'])) {
         throw new UserException('Data folder not set.');
     }
-    $config = json_decode(file_get_contents($arguments["data"] . "/config.json"), true);
+    $config = json_decode(file_get_contents($arguments['data'] . '/config.json'), true);
     $config['parameters']['data_dir'] = $arguments['data'];
     $config['parameters']['writer_class'] = 'MySQL';
 
@@ -44,7 +43,7 @@ try {
     $app = new MySQLApplication($config, $logger);
 
     if ($app['action'] !== 'run') {
-        $app['logger']->setHandlers(array(new NullHandler(Logger::INFO)));
+        $app['logger']->setHandlers([new NullHandler(Logger::INFO)]);
     }
     echo $app->run();
 } catch (UserException $e) {
@@ -67,7 +66,7 @@ try {
         ]
     );
     exit($e->getCode() > 1 ? $e->getCode(): 2);
-} catch (\Throwable $e) {
+} catch (Throwable $e) {
     $logger->critical(
         get_class($e) . ':' . $e->getMessage(),
         [

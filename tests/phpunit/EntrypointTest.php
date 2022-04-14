@@ -37,7 +37,10 @@ class EntrypointTest extends MySQLBaseTest
 
         $process = $this->runProcess();
         $this->assertEquals(1, $process->getExitCode());
-        $this->assertEquals("The child node \"tableId\" at path \"parameters\" must be configured.\n", $process->getErrorOutput());
+        $this->assertEquals(
+            "The child node \"tableId\" at path \"parameters\" must be configured.\n",
+            $process->getErrorOutput()
+        );
     }
 
     public function testConnectionAction(): void

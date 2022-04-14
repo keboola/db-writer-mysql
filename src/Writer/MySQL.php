@@ -13,9 +13,12 @@ use Keboola\DbWriter\WriterInterface;
 use Keboola\SSHTunnel\SSH;
 use Keboola\SSHTunnel\SSHException;
 use Keboola\Temp\Temp;
+use PDO;
+use PDOException;
 use Retry\BackOff\ExponentialBackOffPolicy;
 use Retry\Policy\SimpleRetryPolicy;
 use Retry\RetryProxy;
+use Throwable;
 
 class MySQL extends Writer implements WriterInterface
 {
@@ -32,7 +35,7 @@ class MySQL extends Writer implements WriterInterface
         'char', 'varchar', 'text', 'blob',
     ];
 
-    /** @var \PDO */
+    /** @var PDO */
     protected $db;
 
     /** @var string */
@@ -44,14 +47,14 @@ class MySQL extends Writer implements WriterInterface
         return mb_substr($tableName, 0, 30 - mb_strlen($tmpId)) . $tmpId;
     }
 
-    public function createConnection(array $dbParams): \PDO
+    public function createConnection(array $dbParams): PDO
     {
         $isSsl = false;
 
         // convert errors to PDOExceptions
         $options = [
-            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-            \PDO::MYSQL_ATTR_LOCAL_INFILE => true,
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::MYSQL_ATTR_LOCAL_INFILE => true,
         ];
 
         if (!isset($dbParams['password']) && isset($dbParams['#password'])) {
@@ -61,7 +64,7 @@ class MySQL extends Writer implements WriterInterface
         // check params
         foreach (['host', 'database', 'user', 'password'] as $r) {
             if (!isset($dbParams[$r])) {
-                throw new UserException(sprintf("Parameter %s is missing.", $r));
+                throw new UserException(sprintf('Parameter %s is missing.', $r));
             }
         }
 
@@ -72,26 +75,26 @@ class MySQL extends Writer implements WriterInterface
             $temp = new Temp('wr-db-mysql');
 
             if (!empty($ssl['#key'])) {
-                $options[\PDO::MYSQL_ATTR_SSL_KEY] = $this->createSSLFile($ssl['#key'], $temp);
+                $options[PDO::MYSQL_ATTR_SSL_KEY] = $this->createSSLFile($ssl['#key'], $temp);
                 $isSsl = true;
             }
             if (!empty($ssl['cert'])) {
-                $options[\PDO::MYSQL_ATTR_SSL_CERT] = $this->createSSLFile($ssl['cert'], $temp);
+                $options[PDO::MYSQL_ATTR_SSL_CERT] = $this->createSSLFile($ssl['cert'], $temp);
                 $isSsl = true;
             }
             if (!empty($ssl['ca'])) {
-                $options[\PDO::MYSQL_ATTR_SSL_CA] = $this->createSSLFile($ssl['ca'], $temp);
+                $options[PDO::MYSQL_ATTR_SSL_CA] = $this->createSSLFile($ssl['ca'], $temp);
                 $isSsl = true;
             }
             if (!empty($ssl['cipher'])) {
-                $options[\PDO::MYSQL_ATTR_SSL_CIPHER] = $ssl['cipher'];
+                $options[PDO::MYSQL_ATTR_SSL_CIPHER] = $ssl['cipher'];
             }
         }
 
         $port = isset($dbParams['port']) ? $dbParams['port'] : '3306';
 
         $dsn = sprintf(
-            "mysql:host=%s;port=%s;dbname=%s",
+            'mysql:host=%s;port=%s;dbname=%s',
             $dbParams['host'],
             $port,
             $dbParams['database']
@@ -99,31 +102,31 @@ class MySQL extends Writer implements WriterInterface
 
         $this->logger->info("Connecting to DSN '" . $dsn . "' " . ($isSsl ? 'Using SSL' : ''));
 
-        $pdo = new \PDO($dsn, $dbParams['user'], $dbParams['password'], $options);
-        $pdo->setAttribute(\PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
+        $pdo = new PDO($dsn, $dbParams['user'], $dbParams['password'], $options);
+        $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
         try {
             $pdo->exec("SET NAMES $this->charset;");
-        } catch (\PDOException $e) {
+        } catch (PDOException $e) {
             $this->charset = 'utf8';
             $this->logger->info('Falling back to ' . $this->charset . ' charset');
             $pdo->exec("SET NAMES $this->charset;");
         }
-        $infile = $pdo->query("SHOW VARIABLES LIKE 'local_infile';")->fetch(\PDO::FETCH_ASSOC);
+        $infile = $pdo->query("SHOW VARIABLES LIKE 'local_infile';")->fetch(PDO::FETCH_ASSOC);
         if ($infile['Value'] === 'OFF') {
-            throw new UserException("local_infile is disabled on server");
+            throw new UserException('local_infile is disabled on server');
         }
 
         if ($isSsl) {
-            $status = $pdo->query("SHOW STATUS LIKE 'Ssl_cipher';")->fetch(\PDO::FETCH_ASSOC);
+            $status = $pdo->query("SHOW STATUS LIKE 'Ssl_cipher';")->fetch(PDO::FETCH_ASSOC);
 
             if (empty($status['Value'])) {
-                throw new UserException(sprintf("Connection is not encrypted"));
+                throw new UserException(sprintf('Connection is not encrypted'));
             } else {
-                $this->logger->info("Using SSL cipher: " . $status['Value']);
+                $this->logger->info('Using SSL cipher: ' . $status['Value']);
             }
         }
 
-        // for mysql8 remove sql_mode "NO_ZERO_DATE"
+        // for mysql8 remove sql_mode 'NO_ZERO_DATE'
         if (version_compare($this->getVersion($pdo), '8.0.0', '>')) {
             $pdo->query("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'NO_ZERO_DATE',''));");
         }
@@ -138,8 +141,8 @@ class MySQL extends Writer implements WriterInterface
         try {
             $this->db->exec($query);
             $this->logMysqlWarnings();
-        } catch (\PDOException $e) {
-            throw new UserException("Query failed: " . $e->getMessage(), 400, $e, [
+        } catch (PDOException $e) {
+            throw new UserException('Query failed: ' . $e->getMessage(), 400, $e, [
                 'query' => $query,
             ]);
         }
@@ -159,8 +162,8 @@ class MySQL extends Writer implements WriterInterface
             OPTIONALLY ENCLOSED BY '\"'
             ESCAPED BY ''
             IGNORE 1 LINES
-            (". implode(', ', $columnNames) . ")
-            " . $this->getExpressionReplace($table)
+            (". implode(', ', $columnNames) . ')
+            ' . $this->getExpressionReplace($table)
         ;
 
         $this->logger->info(sprintf('Loading data to table "%s"', $table['dbName']));
@@ -181,7 +184,7 @@ class MySQL extends Writer implements WriterInterface
             return '';
         }
 
-        return "SET " . implode(',', ($expressions));
+        return 'SET ' . implode(',', ($expressions));
     }
 
     protected function emptyToNullOrDefault(array $table): Iterator
@@ -230,7 +233,7 @@ class MySQL extends Writer implements WriterInterface
                         );
                     } else {
                         yield sprintf(
-                            "%s = cast(%s as signed)",
+                            '%s = cast(%s as signed)',
                             $this->escape($column['dbName']),
                             $this->getVariableColumn($column['dbName'])
                         );
@@ -296,7 +299,7 @@ class MySQL extends Writer implements WriterInterface
 
     public function drop(string $tableName): void
     {
-        $this->exec(sprintf("DROP TABLE IF EXISTS %s;", $this->escape($tableName)));
+        $this->exec(sprintf('DROP TABLE IF EXISTS %s;', $this->escape($tableName)));
     }
 
     private function escape(string $obj): string
@@ -307,7 +310,7 @@ class MySQL extends Writer implements WriterInterface
     public function create(array $table): void
     {
         $sql = sprintf(
-            "CREATE %s TABLE `%s` (",
+            'CREATE %s TABLE `%s` (',
             isset($table['temporary']) && $table['temporary'] === true ? 'TEMPORARY' : '',
             $table['dbName']
         );
@@ -315,7 +318,7 @@ class MySQL extends Writer implements WriterInterface
         $columns = $table['items'];
         foreach ($columns as $k => $col) {
             $type = strtoupper($col['type']);
-            if ($type == 'IGNORE') {
+            if ($type === 'IGNORE') {
                 continue;
             }
 
@@ -326,7 +329,7 @@ class MySQL extends Writer implements WriterInterface
             $null = $col['nullable'] ? 'NULL' : 'NOT NULL';
 
             $default = empty($col['default']) ? '' : "DEFAULT '" . $col['default'] . "'";
-            if ($type == 'TEXT') {
+            if ($type === 'TEXT') {
                 $default = '';
             }
 
@@ -336,7 +339,7 @@ class MySQL extends Writer implements WriterInterface
 
         if (!empty($table['primaryKey'])) {
             $writer = $this;
-            $sql .= "PRIMARY KEY (" . implode(
+            $sql .= 'PRIMARY KEY (' . implode(
                 ', ',
                 array_map(
                     function ($primaryColumn) use ($writer) {
@@ -344,11 +347,10 @@ class MySQL extends Writer implements WriterInterface
                     },
                     $table['primaryKey']
                 )
-            ) . ")";
+            ) . ')';
 
             $sql .= ',';
         }
-
 
         $sql = substr($sql, 0, -1);
         $sql .= ") DEFAULT CHARSET=$this->charset COLLATE {$this->charset}_unicode_ci";
@@ -438,7 +440,7 @@ class MySQL extends Writer implements WriterInterface
         sort($primaryKeysInDb);
         sort($configKeys);
 
-        if ($primaryKeysInDb != $configKeys) {
+        if ($primaryKeysInDb !== $configKeys) {
             throw new UserException(sprintf(
                 'Primary key(s) in configuration does NOT match with keys in DB table.' . PHP_EOL
                 . 'Keys in configuration: %s' . PHP_EOL
@@ -472,8 +474,8 @@ class MySQL extends Writer implements WriterInterface
 
     public function showTables(string $dbName): array
     {
-        $stmt = $this->db->query("SHOW TABLES;");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $stmt = $this->db->query('SHOW TABLES;');
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return array_map(function ($item) {
             return array_shift($item);
@@ -482,8 +484,8 @@ class MySQL extends Writer implements WriterInterface
 
     public function getTableInfo(string $tableName): array
     {
-        $stmt = $this->db->query(sprintf("DESCRIBE %s;", $this->escape($tableName)));
-        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $stmt = $this->db->query(sprintf('DESCRIBE %s;', $this->escape($tableName)));
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public function validateTable(array $tableConfig): void
@@ -491,9 +493,9 @@ class MySQL extends Writer implements WriterInterface
         // TODO: Implement validateTable() method.
     }
 
-    private function getVersion(\PDO $pdo): string
+    private function getVersion(PDO $pdo): string
     {
-        $stmt = $pdo->query('SHOW VARIABLES LIKE "version";')->fetch(\PDO::FETCH_ASSOC);
+        $stmt = $pdo->query('SHOW VARIABLES LIKE "version";')->fetch(PDO::FETCH_ASSOC);
         return $stmt['Value'];
     }
 
@@ -504,7 +506,7 @@ class MySQL extends Writer implements WriterInterface
         // check params
         foreach (['keys', 'sshHost'] as $k) {
             if (empty($sshConfig[$k])) {
-                throw new UserException(sprintf("Parameter %s is missing.", $k));
+                throw new UserException(sprintf('Parameter %s is missing.', $k));
             }
         }
 
@@ -536,7 +538,7 @@ class MySQL extends Writer implements WriterInterface
 
         $simplyRetryPolicy = new SimpleRetryPolicy(
             self::DEFAULT_MAX_TRIES,
-            [SSHException::class,\Throwable::class]
+            [SSHException::class, Throwable::class]
         );
 
         $exponentialBackOffPolicy = new ExponentialBackOffPolicy();
@@ -563,7 +565,7 @@ class MySQL extends Writer implements WriterInterface
 
     protected function logMysqlWarnings(): void
     {
-        $stmt = $this->db->query("SHOW WARNINGS;");
+        $stmt = $this->db->query('SHOW WARNINGS;');
         $warnings = $stmt->fetchAll();
         foreach ($warnings as $warning) {
             $this->logger->warning($warning['Message']);

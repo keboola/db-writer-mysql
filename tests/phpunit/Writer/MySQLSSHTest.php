@@ -9,6 +9,7 @@ use Keboola\DbWriter\Logger;
 use Keboola\DbWriter\Test\MySQLBaseTest;
 use Keboola\DbWriter\WriterFactory;
 use Monolog\Handler\TestHandler;
+use PDO;
 
 class MySQLSSHTest extends MySQLBaseTest
 {
@@ -58,7 +59,7 @@ class MySQLSSHTest extends MySQLBaseTest
         $table = $tables[0];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . '/' . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . '.csv';
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -66,11 +67,11 @@ class MySQLSSHTest extends MySQLBaseTest
 
         $conn = $this->writer->getConnection();
         $stmt = $conn->query("SELECT * FROM $outputTableName");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["id","name","glasses"]);
+        $csv->writeRow(['id','name','glasses']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
@@ -81,7 +82,7 @@ class MySQLSSHTest extends MySQLBaseTest
         $table = $tables[1];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . '/' . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . '.csv';
 
         $this->writer->drop($outputTableName);
         $this->writer->create($table);
@@ -89,11 +90,11 @@ class MySQLSSHTest extends MySQLBaseTest
 
         $conn = $this->writer->getConnection();
         $stmt = $conn->query("SELECT * FROM $outputTableName");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp-2');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(["col1","col2"]);
+        $csv->writeRow(['col1','col2']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
@@ -104,7 +105,7 @@ class MySQLSSHTest extends MySQLBaseTest
         $table = $tables[0];
         $sourceTableId = $table['tableId'];
         $outputTableName = $table['dbName'];
-        $sourceFilename = $this->dataDir . '/' . $sourceTableId . ".csv";
+        $sourceFilename = $this->dataDir . '/' . $sourceTableId . '.csv';
 
         $table['items'][2]['type'] = 'IGNORE';
 
@@ -114,7 +115,7 @@ class MySQLSSHTest extends MySQLBaseTest
 
         $conn = $this->writer->getConnection();
         $stmt = $conn->query("SELECT * FROM $outputTableName");
-        $res = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $res = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $resArr = [];
         foreach ($res as $row) {
