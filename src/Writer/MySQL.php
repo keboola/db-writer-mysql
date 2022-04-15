@@ -89,6 +89,9 @@ class MySQL extends Writer implements WriterInterface
             if (!empty($ssl['cipher'])) {
                 $options[PDO::MYSQL_ATTR_SSL_CIPHER] = $ssl['cipher'];
             }
+            if (!$ssl['verifyServerCert']) {
+                $options[PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT] = false;
+            }
         }
 
         $port = isset($dbParams['port']) ? $dbParams['port'] : '3306';
