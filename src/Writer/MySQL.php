@@ -102,10 +102,13 @@ class MySQL extends Writer implements WriterInterface
             $port,
             $dbParams['database']
         );
-
         $this->logger->info("Connecting to DSN '" . $dsn . "' " . ($isSsl ? 'Using SSL' : ''));
 
-        $pdo = new PDO($dsn, $dbParams['user'], $dbParams['password'], $options);
+        try {
+            $pdo = new PDO($dsn, $dbParams['user'], $dbParams['password'], $options);
+        } catch (PDOException $e) {
+            $this->handleException($e);
+        }
         $pdo->setAttribute(PDO::MYSQL_ATTR_USE_BUFFERED_QUERY, false);
         try {
             $pdo->exec("SET NAMES $this->charset;");
@@ -573,5 +576,26 @@ class MySQL extends Writer implements WriterInterface
         foreach ($warnings as $warning) {
             $this->logger->warning($warning['Message']);
         }
+    }
+
+    private function handleException(Throwable $e): void
+    {
+        $checkCnMismatch = function (Throwable $exception): void {
+            if (strpos($exception->getMessage(), 'did not match expected CN') !== false) {
+                throw new UserException($exception->getMessage());
+            }
+        };
+        $checkCnMismatch($e);
+        $previous = $e->getPrevious();
+        if ($previous !== null) {
+            $checkCnMismatch($previous);
+        }
+
+        // SQLSTATE[HY000] is a main general message
+        // additional informations are in the previous exception, so throw previous
+        if (strpos($e->getMessage(), 'SQLSTATE[HY000]') === 0 && $e->getPrevious() !== null) {
+            throw $e->getPrevious();
+        }
+        throw $e;
     }
 }
