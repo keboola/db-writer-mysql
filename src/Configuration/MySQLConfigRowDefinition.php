@@ -103,7 +103,7 @@ class MySQLConfigRowDefinition extends ConfigDefinition
                 ->scalarNode('cert')->end()
                 ->scalarNode('#key')->end()
                 ->scalarNode('cipher')->end()
-                ->booleanNode('verifyServerCert')->end()
+                ->booleanNode('verifyServerCert')->defaultTrue()->end()
             ->end()
         ;
 
