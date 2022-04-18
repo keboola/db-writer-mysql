@@ -47,7 +47,6 @@ class DatadirTest extends AbstractDatadirTestCase
     public function testDatadir(DatadirTestSpecificationInterface $specification): void
     {
         $tempDatadir = $this->getTempDatadir($specification);
-        $this->replaceDatabaseConfig($tempDatadir);
 
         $this->dataDir = $tempDatadir->getTmpFolder();
 
@@ -58,25 +57,6 @@ class DatadirTest extends AbstractDatadirTestCase
         $this->dumpTables($tempDatadir->getTmpFolder());
 
         $this->assertMatchesSpecification($specification, $process, $tempDatadir->getTmpFolder());
-    }
-
-    private function replaceDatabaseConfig(Temp $tempDatadir): void
-    {
-        $configFile = $tempDatadir->getTmpFolder() . '/config.json';
-        $config = json_decode((string) file_get_contents($configFile), true);
-        $config['parameters'] = array_merge(
-            $config['parameters'],
-            [
-                'db' => [
-                    'host' => getenv('DB_HOST'),
-                    'port' => getenv('DB_PORT'),
-                    'database' => getenv('DB_DATABASE'),
-                    'user' => getenv('DB_USER'),
-                    '#password' => getenv('DB_PASSWORD'),
-                ],
-            ]
-        );
-        file_put_contents($configFile, json_encode($config));
     }
 
     /**
