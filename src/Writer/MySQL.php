@@ -397,7 +397,7 @@ class MySQL extends Writer implements WriterInterface
     private function upsertWithPK(array $tableConfig, string $targetTable, array $dbColumns): void
     {
         // check primary keys
-        $this->checkKeys($tableConfig['primaryKey'], $targetTable);
+//        $this->checkKeys($tableConfig['primaryKey'], $targetTable);
 
         // update data
         $tempTableName = $this->escape($tableConfig['dbName']);
