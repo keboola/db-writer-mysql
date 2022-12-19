@@ -8,6 +8,7 @@ use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Configuration\MySQLActionConfigRowDefinition;
 use Keboola\DbWriter\Configuration\MySQLConfigDefinition;
 use Keboola\DbWriter\Configuration\MySQLConfigRowDefinition;
+use Keboola\DbWriter\Writer\MySQL;
 
 class MySQLApplication extends Application
 {
@@ -25,6 +26,15 @@ class MySQLApplication extends Application
             }
         }
         parent::__construct($config, $logger, $configDefinition);
+    }
+
+    public function writeFull(CsvFile $csv, array $tableConfig): void
+    {
+        /** @var MySQL $writer */
+        $writer = $this['writer'];
+
+        $writer->truncate($tableConfig['dbName']);
+        $writer->write($csv, $tableConfig);
     }
 
     public function writeIncremental(CsvFile $csv, array $tableConfig): void
