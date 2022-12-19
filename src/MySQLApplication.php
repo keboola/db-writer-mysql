@@ -41,22 +41,26 @@ class MySQLApplication extends Application
     {
         /** @var WriterInterface $writer */
         $writer = $this['writer'];
-
+$this['logger']->info('A');
         // write to staging table
         $stageTable = $tableConfig;
         $stageTable['dbName'] = $writer->generateTmpName($tableConfig['dbName']);
         $stageTable['temporary'] = true;
-
+$this['logger']->info('B');
         $writer->create($stageTable);
+$this['logger']->info('C');
         $writer->write($csv, $stageTable);
-
+$this['logger']->info('D');
         // create destination table if not exists
         $dstTableExists = $writer->tableExists($tableConfig['dbName']);
+$this['logger']->info('E');
         if (!$dstTableExists) {
+            $this['logger']->info('F');
             $writer->create($tableConfig);
         }
+        $this['logger']->info('G');
         $writer->validateTable($tableConfig);
-
+        $this['logger']->info('H');
         // upsert from staging to destination table
         $writer->upsert($stageTable, $tableConfig['dbName']);
     }
