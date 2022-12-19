@@ -348,20 +348,20 @@ class MySQL extends Writer implements WriterInterface
             $sql .= ',';
         }
 
-        if (!empty($table['primaryKey'])) {
-            $writer = $this;
-            $sql .= 'PRIMARY KEY (' . implode(
-                ', ',
-                array_map(
-                    function ($primaryColumn) use ($writer) {
-                        return $writer->escape($primaryColumn);
-                    },
-                    $table['primaryKey']
-                )
-            ) . ')';
-
-            $sql .= ',';
-        }
+//        if (!empty($table['primaryKey'])) {
+//            $writer = $this;
+//            $sql .= 'PRIMARY KEY (' . implode(
+//                ', ',
+//                array_map(
+//                    function ($primaryColumn) use ($writer) {
+//                        return $writer->escape($primaryColumn);
+//                    },
+//                    $table['primaryKey']
+//                )
+//            ) . ')';
+//
+//            $sql .= ',';
+//        }
 
         $sql = substr($sql, 0, -1);
         $sql .= ") DEFAULT CHARSET=$this->charset COLLATE {$this->charset}_unicode_ci";
