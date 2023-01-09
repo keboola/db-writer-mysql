@@ -1,9 +1,5 @@
 # MySQL DB Writer
 
-[![Docker Repository on Quay](https://quay.io/repository/keboola/db-writer-mysql/status "Docker Repository on Quay")](https://quay.io/repository/keboola/db-writer-mysql)
-[![Build Status](https://travis-ci.com/keboola/db-writer-mysql.svg?branch=master)](https://travis-ci.com/keboola/db-writer-mysql)
-[![Code Climate](https://codeclimate.com/github/keboola/db-writer-mysql/badges/gpa.svg)](https://codeclimate.com/github/keboola/db-writer-mysql)
-[![Test Coverage](https://codeclimate.com/github/keboola/db-writer-mysql/badges/coverage.svg)](https://codeclimate.com/github/keboola/db-writer-mysql/coverage)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/keboola/db-writer-mysql/blob/master/LICENSE.md)
 
 Imports CSV data into MySQL Database.
