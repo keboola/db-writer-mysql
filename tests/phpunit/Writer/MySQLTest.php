@@ -1,9 +1,10 @@
 <?php
 
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace Keboola\DbWriter\Tests\Writer;
 
+use ErrorException;
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Exception\UserException;
 use Keboola\DbWriter\Logger;
@@ -11,6 +12,7 @@ use Keboola\DbWriter\Test\MySQLBaseTest;
 use Keboola\DbWriter\WriterFactory;
 use Monolog\Handler\TestHandler;
 use PDO;
+use ReflectionClass;
 
 class MySQLTest extends MySQLBaseTest
 {
@@ -118,7 +120,7 @@ class MySQLTest extends MySQLBaseTest
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(['id','name','glasses']);
+        $csv->writeRow(['id', 'name', 'glasses']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
@@ -141,7 +143,7 @@ class MySQLTest extends MySQLBaseTest
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp-2');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(['col1','col2']);
+        $csv->writeRow(['col1', 'col2']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
@@ -204,7 +206,7 @@ class MySQLTest extends MySQLBaseTest
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(['id','name','glasses']);
+        $csv->writeRow(['id', 'name', 'glasses']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
@@ -267,7 +269,7 @@ class MySQLTest extends MySQLBaseTest
         // check CSV
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(['id','name','glasses','date','datetime','nullablestring']);
+        $csv->writeRow(['id', 'name', 'glasses', 'date', 'datetime', 'nullablestring']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
@@ -295,7 +297,7 @@ class MySQLTest extends MySQLBaseTest
         $table = $tables[0];
         $sourceFilename = $this->dataDir . '/' . $table['tableId'] . '.csv';
         $targetTable = $table;
-        $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
+        $table['dbName'] .= $table['incremental'] ? '_temp_' . uniqid() : '';
 
         // first write
         $this->writer->create($targetTable);
@@ -332,7 +334,7 @@ class MySQLTest extends MySQLBaseTest
 
         $sourceFilename = $this->dataDir . '/' . $table['tableId'] . '.csv';
         $targetTable = $table;
-        $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
+        $table['dbName'] .= $table['incremental'] ? '_temp_' . uniqid() : '';
 
         // first write
         $this->writer->create($targetTable);
@@ -369,7 +371,7 @@ class MySQLTest extends MySQLBaseTest
 
         $sourceFilename = $this->dataDir . '/' . $table['tableId'] . '.csv';
         $targetTable = $table;
-        $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
+        $table['dbName'] .= $table['incremental'] ? '_temp_' . uniqid() : '';
 
         // first write
         $this->writer->create($targetTable);
@@ -426,7 +428,7 @@ class MySQLTest extends MySQLBaseTest
 
         $sourceFilename = $this->dataDir . '/' . $table['tableId'] . '.csv';
         $targetTable = $table;
-        $table['dbName'] .= $table['incremental']?'_temp_' . uniqid():'';
+        $table['dbName'] .= $table['incremental'] ? '_temp_' . uniqid() : '';
 
         // first write
         $this->writer->create($targetTable);
@@ -566,7 +568,7 @@ class MySQLTest extends MySQLBaseTest
 
         $resFilename = tempnam('/tmp', 'db-wr-test-tmp');
         $csv = new CsvFile($resFilename);
-        $csv->writeRow(['col1','col2']);
+        $csv->writeRow(['col1', 'col2']);
         foreach ($res as $row) {
             $csv->writeRow($row);
         }
@@ -584,5 +586,33 @@ class MySQLTest extends MySQLBaseTest
         }
 
         $this->assertEquals(2, $messagesFound);
+    }
+
+    /**
+     * @throws \ReflectionException
+     */
+    public function testMysqlServerGoneAwayException(): void
+    {
+        $this->expectException(UserException::class);
+
+        $exceptionMock = $this->getMockBuilder(PDO::class)
+            ->disableOriginalConstructor()
+            ->getMock();
+
+        $exceptionMock->expects($this->any())
+            ->method('exec')
+            ->will($this->throwException(new ErrorException('MySQL server has gone away')));
+
+        $reflection = new ReflectionClass($this->writer);
+        $reflection_property = $reflection->getProperty('db');
+        $reflection_property->setAccessible(true);
+
+        $reflection_property->setValue($this->writer, $exceptionMock);
+
+        $tables = $this->config['parameters']['tables'];
+
+        foreach ($tables as $table) {
+            $this->writer->create($table);
+        }
     }
 }
