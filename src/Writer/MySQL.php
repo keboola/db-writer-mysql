@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Keboola\DbWriter\Writer;
 
+use ErrorException;
 use Iterator;
 use Keboola\Csv\CsvFile;
 use Keboola\DbWriter\Exception\ApplicationException;
@@ -147,7 +148,7 @@ class MySQL extends Writer implements WriterInterface
         try {
             $this->db->exec($query);
             $this->logMysqlWarnings();
-        } catch (PDOException $e) {
+        } catch (PDOException|ErrorException $e) {
             throw new UserException('Query failed: ' . $e->getMessage(), 400, $e, [
                 'query' => $query,
             ]);
