@@ -309,6 +309,11 @@ class MySQL extends Writer implements WriterInterface
         $this->exec(sprintf('DROP TABLE IF EXISTS %s;', $this->escape($tableName)));
     }
 
+    public function truncate(string $tableName): void
+    {
+        $this->exec(sprintf('TRUNCATE TABLE %s;', $this->escape($tableName)));
+    }
+
     private function escape(string $obj): string
     {
         return "`{$obj}`";
