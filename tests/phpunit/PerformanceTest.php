@@ -2,19 +2,30 @@
 
 declare(strict_types=1);
 
-namespace Keboola\DbWriter\Tests\Writer;
+namespace Keboola\DbWriter\Tests;
 
-use Keboola\Csv\CsvFile;
-use Keboola\DbWriter\Test\MySQLBaseTest;
+use Keboola\Csv\CsvWriter;
+use Keboola\DbWriter\Writer\MySQLConnectionFactory;
+use Keboola\DbWriter\Writer\MySQLQueryBuilder;
+use Keboola\DbWriter\Writer\MySQLWriteAdapter;
+use Keboola\DbWriterConfig\Configuration\ValueObject\ExportConfig;
+use Keboola\Temp\Temp;
+use PHPUnit\Framework\TestCase;
+use Psr\Log\Test\TestLogger;
+use Symfony\Component\Filesystem\Filesystem;
 
-class PerformanceTest extends MySQLBaseTest
+class PerformanceTest extends TestCase
 {
 
     public function testWriteMilionRows(): void
     {
+        $temp = new Temp();
+
         $config = <<<JSON
 {
     "parameters": {
+        "data_dir": "%s",
+        "writer_class": "mysql",
         "db": {
             "host": "%s",
             "port": "%s",
@@ -38,7 +49,7 @@ class PerformanceTest extends MySQLBaseTest
                 "name": "col-2",
                 "dbName": "col-2",
                 "type": "varchar",
-                "size": 255,
+                "size": "255",
                 "nullable": true,
                 "default": ""
             },
@@ -46,7 +57,7 @@ class PerformanceTest extends MySQLBaseTest
                 "name": "col-3",
                 "dbName": "col-3",
                 "type": "varchar",
-                "size": 255,
+                "size": "255",
                 "nullable": true,
                 "default": ""
             },
@@ -54,7 +65,7 @@ class PerformanceTest extends MySQLBaseTest
                 "name": "col-4",
                 "dbName": "col-4",
                 "type": "varchar",
-                "size": 255,
+                "size": "255",
                 "nullable": true,
                 "default": "default"
             },
@@ -62,7 +73,7 @@ class PerformanceTest extends MySQLBaseTest
                 "name": "col-5",
                 "dbName": "col-5",
                 "type": "varchar",
-                "size": 255,
+                "size": "255",
                 "nullable": false,
                 "default": ""
             },
@@ -70,7 +81,7 @@ class PerformanceTest extends MySQLBaseTest
                 "name": "col-6",
                 "dbName": "col-6",
                 "type": "varchar",
-                "size": 255,
+                "size": "255",
                 "nullable": false,
                 "default": "default"
             },
@@ -102,7 +113,7 @@ class PerformanceTest extends MySQLBaseTest
                 "name": "col-10",
                 "dbName": "col-10",
                 "type": "int",
-                "size": 255,
+                "size": "255",
                 "nullable": false,
                 "default": ""
             }
@@ -120,16 +131,29 @@ class PerformanceTest extends MySQLBaseTest
     }
 }
 JSON;
-        $config = sprintf(
-            $config,
-            getenv('DB_HOST'),
-            getenv('DB_PORT'),
-            getenv('DB_DATABASE'),
-            getenv('DB_USER'),
-            getenv('DB_PASSWORD')
+
+        /** @var array{
+         *   "parameters": array,
+         *   "storage": array
+         * } $config
+         */
+        $config = (array) json_decode(
+            sprintf(
+                (string) $config,
+                $temp->getTmpFolder(),
+                getenv('DB_HOST'),
+                getenv('DB_PORT'),
+                getenv('DB_DATABASE'),
+                getenv('DB_USER'),
+                getenv('DB_PASSWORD'),
+            ),
+            true,
         );
-        $this->initFixtures(json_decode($config, true), $this->dataDir . '/performance');
-        $csv = new CsvFile($this->tmpDataDir . '/in/tables/performance.csv');
+
+        $fs = new Filesystem();
+        $fs->mkdir($temp->getTmpFolder() . '/in/tables');
+
+        $csv = new CsvWriter($temp->getTmpFolder() . '/in/tables/performance.csv');
         $csv->writeRow([
             'col-1',
             'col-2',
@@ -169,10 +193,28 @@ JSON;
             ]);
         }
 
+        $exportConfig = ExportConfig::fromArray(
+            $config['parameters'],
+            $config['storage']['input']['tables'],
+        );
+
+        $testLogger = new TestLogger();
+        $adapter = new MySQLWriteAdapter(
+            MySQLConnectionFactory::create(
+                $exportConfig->getDatabaseConfig(),
+                $testLogger,
+            ),
+            new MySQLQueryBuilder('utf8mb4'),
+            $testLogger,
+        );
+        if ($adapter->tableExists($exportConfig->getDbName())) {
+            $adapter->drop($exportConfig->getDbName());
+        }
+        $adapter->create($exportConfig->getDbName(), false, $exportConfig->getItems());
+
         $startTime = microtime(true);
-        $process = $this->runProcess();
+        $adapter->writeData($exportConfig->getDbName(), $exportConfig);
         $stopTime = microtime(true);
         self::assertLessThan(50, round($stopTime-$startTime));
-        self::assertEquals(0, $process->getExitCode(), $process->getOutput() . $process->getErrorOutput());
     }
 }
