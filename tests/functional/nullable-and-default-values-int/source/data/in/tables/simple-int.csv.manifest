@@ -1,0 +1,14 @@
+{
+  "columns": [
+    "id",
+    "col-null-null",
+    "col-true-null",
+    "col-true-empty-string",
+    "col-true-string",
+    "col-true-zero-value",
+    "col-false-null",
+    "col-false-empty-string",
+    "col-false-string",
+    "col-false-zero-value"
+  ]
+}

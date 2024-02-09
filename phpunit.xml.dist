@@ -6,11 +6,19 @@
          convertNoticesToExceptions="true"
          convertWarningsToExceptions="true"
          processIsolation="false"
-         stopOnFailure="true"
+         stopOnFailure="false"
          bootstrap="vendor/autoload.php">
 
-    <testsuite name="MySQL Writer Test Suite">
-        <directory>tests</directory>
-    </testsuite>
-
+    <testsuites>
+        <testsuite name="unit">
+            <directory>tests/phpunit</directory>
+            <exclude>tests/phpunit/PerformanceTest.php</exclude>
+        </testsuite>
+        <testsuite name="functional">
+            <directory>tests/functional</directory>
+        </testsuite>
+        <testsuite name="perf">
+            <file>tests/phpunit/PerformanceTest.php</file>
+        </testsuite>
+    </testsuites>
 </phpunit>

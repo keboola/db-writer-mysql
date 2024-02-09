@@ -1,35 +1,54 @@
-FROM keboola/db-component-ssh-proxy:latest AS sshproxy
-FROM php:7.3-cli
-ARG DEBIAN_FRONTEND=noninteractive
+FROM php:8.2-cli-buster
+
 ARG COMPOSER_FLAGS="--prefer-dist --no-interaction"
-ENV COMPOSER_ALLOW_SUPERUSER=1
+ARG DEBIAN_FRONTEND=noninteractive
+ENV COMPOSER_ALLOW_SUPERUSER 1
 ENV COMPOSER_PROCESS_TIMEOUT 3600
 
+WORKDIR /code/
+
+COPY docker/php-prod.ini /usr/local/etc/php/php.ini
+COPY docker/composer-install.sh /tmp/composer-install.sh
+
 # Deps
-RUN apt-get update
-RUN apt-get install -y wget curl make git bzip2 time libzip-dev openssl unzip
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        git \
+        wget \
+        curl \
+        bzip2 \
+        libzip-dev \
+        openssl \
+        locales \
+        libicu-dev \
+        unzip \
+        ssh \
+	&& rm -r /var/lib/apt/lists/* \
+	&& sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen \
+	&& locale-gen \
+	&& chmod +x /tmp/composer-install.sh \
+	&& /tmp/composer-install.sh
+
+RUN docker-php-ext-configure intl \
+    && docker-php-ext-install intl
 
 # PHP
 RUN docker-php-ext-install pdo pdo_mysql
-RUN echo "memory_limit = -1" >> /usr/local/etc/php/php.ini
-RUN echo "date.timezone = \"Europe/Prague\"" >> /usr/local/etc/php/php.ini
 
-# Composer
-WORKDIR /root
-RUN curl -sS https://getcomposer.org/installer | php \
-  && mv composer.phar /usr/local/bin/composer
+ENV LANGUAGE=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LC_ALL=en_US.UTF-8
 
-# Main
-WORKDIR /code
 ## Composer - deps always cached unless changed
 # First copy only composer files
 COPY composer.* /code/
+
 # Download dependencies, but don't run scripts or init autoloaders as the app is missing
 RUN composer install $COMPOSER_FLAGS --no-scripts --no-autoloader
-# copy rest of the app
+
+# Copy rest of the app
 COPY . /code/
-# run normal composer - all deps are cached already
+
+# Run normal composer - all deps are cached already
 RUN composer install $COMPOSER_FLAGS
 
-COPY --from=sshproxy /root/.ssh /root/.ssh
-CMD php ./run.php --data=/data
+CMD ["php", "/code/src/run.php"]

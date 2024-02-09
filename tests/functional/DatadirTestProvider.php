@@ -12,14 +12,12 @@ use Symfony\Component\Finder\SplFileInfo;
 
 class DatadirTestProvider extends DatadirTestsFromDirectoryProvider
 {
-    /** @var string $testDirectory */
-    private $testDirectory;
+    private string $testDirectory;
 
     /** @var DatadirTestSpecification[][] */
-    protected $datapoints;
+    protected array $datapoints;
 
-    /** @var int $mysqlVersion */
-    private $mysqlVersion;
+    private int $mysqlVersion;
 
     public function __construct(int $mysqlVersion, string $testDirectory = 'tests/functional')
     {
@@ -77,7 +75,7 @@ class DatadirTestProvider extends DatadirTestsFromDirectoryProvider
                 throw new InvalidArgumentException(sprintf(
                     '%s: Expecting invalid return code (%s). Possible codes are: 0, 1, 2.',
                     $name,
-                    $returnCode
+                    $returnCode,
                 ));
             }
         }
@@ -95,7 +93,7 @@ class DatadirTestProvider extends DatadirTestsFromDirectoryProvider
                 $expectedReturnCode,
                 $expectedStdout,
                 $expectedStderr,
-                $expectedOutputDirectory
+                $expectedOutputDirectory,
             ),
         ];
     }

@@ -1,0 +1,1 @@
+Error connecting to DB: PDO::__construct(): Cannot connect to MySQL by using SSL

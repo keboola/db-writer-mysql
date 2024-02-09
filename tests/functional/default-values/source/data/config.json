@@ -1,0 +1,52 @@
+{
+  "parameters": {
+    "db": {
+      "host": "%env(string:DB_HOST)%",
+      "port": "%env(string:DB_PORT)%",
+      "user": "%env(string:DB_USER)%",
+      "#password": "%env(string:DB_PASSWORD)%",
+      "database": "%env(string:DB_DATABASE)%"
+    },
+    "tableId": "simple",
+    "dbName": "simple",
+    "export": true,
+    "incremental": false,
+    "primaryKey": [],
+    "items": [
+      {
+        "name": "id",
+        "dbName": "id",
+        "type": "int",
+        "size": null,
+        "nullable": false,
+        "default": "12345"
+      },
+      {
+        "name": "name",
+        "dbName": "name",
+        "type": "varchar",
+        "size": 255,
+        "nullable": false,
+        "default": "nameDefaultValue"
+      },
+      {
+        "name": "glasses",
+        "dbName": "glasses",
+        "type": "varchar",
+        "size": 255,
+        "nullable": true,
+        "default": "glassesDefaultValue"
+      }
+    ]
+  },
+  "storage": {
+    "input": {
+      "tables": [
+        {
+          "source": "simple",
+          "destination": "simple.csv"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "columns": [
+    "name",
+    "int",
+    "float",
+    "date",
+    "datetime",
+    "timestamp"
+  ]
+}
