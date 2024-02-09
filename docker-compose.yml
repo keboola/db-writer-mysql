@@ -42,7 +42,7 @@ services:
       - TIMEOUT=120
 
   mysql:
-    image: mysql:${MYSQL_VERSION}
+    image: mysql:${MYSQL_VERSION:-latest}
     command: mysqld --local-infile --port=3306 --default-authentication-plugin=mysql_native_password
     ports:
       - "3306:3306"
@@ -51,7 +51,7 @@ services:
       MYSQL_ROOT_PASSWORD: rootpassword
 
   mysql-ssl:
-    image: mysql:${MYSQL_VERSION}
+    image: mysql:${MYSQL_VERSION:-latest}
     command: mysqld --local-infile --port=3306 --default-authentication-plugin=mysql_native_password
     volumes:
       - ./docker/ssl/certificates:/ssl-cert
