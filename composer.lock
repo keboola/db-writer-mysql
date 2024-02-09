@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "ddb1c9cf3041f3b785a82789ed09ca3a",
+    "content-hash": "a5d5445987c3946a844be7937f31294f",
     "packages": [
         {
             "name": "keboola/common-exceptions",
@@ -101,21 +101,21 @@
         },
         {
             "name": "keboola/db-writer-adapter",
-            "version": "dev-ondra-init-adapter",
+            "version": "0.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/db-writer-adapter.git",
-                "reference": "3078b2ea245f3659dddb36b78c1b1ff6aeed7472"
+                "reference": "fbce5499399dec04630f6166d435e1a19be87281"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/db-writer-adapter/zipball/3078b2ea245f3659dddb36b78c1b1ff6aeed7472",
-                "reference": "3078b2ea245f3659dddb36b78c1b1ff6aeed7472",
+                "url": "https://api.github.com/repos/keboola/db-writer-adapter/zipball/fbce5499399dec04630f6166d435e1a19be87281",
+                "reference": "fbce5499399dec04630f6166d435e1a19be87281",
                 "shasum": ""
             },
             "require": {
                 "ext-mbstring": "*",
-                "keboola/db-writer-config": "dev-ondra-init-config",
+                "keboola/db-writer-config": "^0.1.0",
                 "keboola/php-component": "^9.0",
                 "keboola/retry": "^0.5.1",
                 "php": "^8.2",
@@ -154,29 +154,29 @@
             ],
             "description": "MyComponent description",
             "support": {
-                "source": "https://github.com/keboola/db-writer-adapter/tree/ondra-init-adapter"
+                "source": "https://github.com/keboola/db-writer-adapter/tree/0.1.0"
             },
-            "time": "2024-02-08T21:20:23+00:00"
+            "time": "2024-02-09T20:17:55+00:00"
         },
         {
             "name": "keboola/db-writer-common",
-            "version": "dev-ondra-refactoring",
+            "version": "6.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/db-writer-common.git",
-                "reference": "5aaa332a1f913625b3965e9d58465cd2315e7203"
+                "reference": "e53a835d3221b8b3d6fcbb3e3ff836f902bbdfa6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/db-writer-common/zipball/5aaa332a1f913625b3965e9d58465cd2315e7203",
-                "reference": "5aaa332a1f913625b3965e9d58465cd2315e7203",
+                "url": "https://api.github.com/repos/keboola/db-writer-common/zipball/e53a835d3221b8b3d6fcbb3e3ff836f902bbdfa6",
+                "reference": "e53a835d3221b8b3d6fcbb3e3ff836f902bbdfa6",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
                 "ext-pdo": "*",
-                "keboola/db-writer-adapter": "dev-ondra-init-adapter",
-                "keboola/db-writer-config": "dev-ondra-init-config",
+                "keboola/db-writer-adapter": "^0.1.0",
+                "keboola/db-writer-config": "^0.1.0",
                 "keboola/php-component": "^9.4",
                 "keboola/retry": "^0.5.1",
                 "keboola/ssh-tunnel": "^2.0",
@@ -215,22 +215,22 @@
             ],
             "support": {
                 "issues": "https://github.com/keboola/db-writer-common/issues",
-                "source": "https://github.com/keboola/db-writer-common/tree/ondra-refactoring"
+                "source": "https://github.com/keboola/db-writer-common/tree/6.0.0"
             },
-            "time": "2024-02-08T21:19:43+00:00"
+            "time": "2024-02-09T20:26:07+00:00"
         },
         {
             "name": "keboola/db-writer-config",
-            "version": "dev-ondra-init-config",
+            "version": "0.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/db-writer-config.git",
-                "reference": "19fe198003dbab0e5b194982d9ba5070b5c0f9dc"
+                "reference": "3118fe15c7bf2f594e603a7a0d039e18622bada0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/db-writer-config/zipball/19fe198003dbab0e5b194982d9ba5070b5c0f9dc",
-                "reference": "19fe198003dbab0e5b194982d9ba5070b5c0f9dc",
+                "url": "https://api.github.com/repos/keboola/db-writer-config/zipball/3118fe15c7bf2f594e603a7a0d039e18622bada0",
+                "reference": "3118fe15c7bf2f594e603a7a0d039e18622bada0",
                 "shasum": ""
             },
             "require": {
@@ -266,9 +266,9 @@
             ],
             "description": "Config definition for database writer component",
             "support": {
-                "source": "https://github.com/keboola/db-writer-config/tree/ondra-init-config"
+                "source": "https://github.com/keboola/db-writer-config/tree/0.1.0"
             },
-            "time": "2024-02-08T21:20:43+00:00"
+            "time": "2024-02-09T20:11:58+00:00"
         },
         {
             "name": "keboola/php-component",
@@ -3447,11 +3447,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "keboola/db-writer-adapter": 20,
-        "keboola/db-writer-common": 20,
-        "keboola/db-writer-config": 20
-    },
+    "stability-flags": [],
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
