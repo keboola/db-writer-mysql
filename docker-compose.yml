@@ -14,6 +14,7 @@ services:
       DB_DATABASE: test
     volumes:
       - ./docker/ssl/certificates:/ssl-cert
+      - ssh-keys:/root/.ssh
     links:
       - mysql
       - mysql-ssl
@@ -27,6 +28,8 @@ services:
     volumes:
       - .:/code
       - ./docker/ssl/certificates:/ssl-cert
+      - ssh-keys:/root/.ssh
+      - ./data/:/data/
 
   wait:
     image: waisbrot/wait
@@ -41,6 +44,8 @@ services:
   mysql:
     image: mysql:${MYSQL_VERSION}
     command: mysqld --local-infile --port=3306 --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
     environment:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: rootpassword
@@ -57,5 +62,11 @@ services:
 
   sshproxy:
     image: keboola/db-component-ssh-proxy:latest
-    ports:
-      - "2222:22"
+    links: 
+      - mysql
+      - mysql-ssl
+    volumes:
+      - ssh-keys:/root/.ssh
+
+volumes:
+  ssh-keys:
