@@ -1,3 +1,4 @@
 .idea
 README.md
 vendor
+.phpunit.result.cache
