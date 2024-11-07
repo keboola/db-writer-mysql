@@ -1,0 +1,64 @@
+{
+  "parameters": {
+    "db": {
+      "host": "%env(string:DB_HOST)%",
+      "port": "%env(string:DB_PORT)%",
+      "user": "%env(string:DB_USER)%",
+      "#password": "%env(string:DB_PASSWORD)%",
+      "database": "%env(string:DB_DATABASE)%",
+      "ssh": {
+        "enabled": true,
+        "keys": {
+          "#private": "%env(string:SSH_PRIVATE_KEY)%",
+          "public": "%env(string:SSH_PUBLIC_KEY)%"
+        },
+        "user": "root",
+        "sshHost": "sshproxy",
+        "remoteHost": "MYSQL",
+        "remotePort": "1433",
+        "localPort": "1234"
+      }
+    },
+    "tableId": "simple",
+    "dbName": "simple",
+    "export": true,
+    "incremental": false,
+    "primaryKey": ["id"],
+    "items": [
+      {
+        "name": "id",
+        "dbName": "id",
+        "type": "int",
+        "size": null,
+        "nullable": null,
+        "default": null
+      },
+      {
+        "name": "name",
+        "dbName": "name",
+        "type": "varchar",
+        "size": 255,
+        "nullable": null,
+        "default": null
+      },
+      {
+        "name": "glasses",
+        "dbName": "glasses",
+        "type": "varchar",
+        "size": 255,
+        "nullable": null,
+        "default": null
+      }
+    ]
+  },
+  "storage": {
+    "input": {
+      "tables": [
+        {
+          "source": "simple",
+          "destination": "simple.csv"
+        }
+      ]
+    }
+  }
+}

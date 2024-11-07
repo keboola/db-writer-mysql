@@ -1,0 +1,76 @@
+{
+  "parameters": {
+    "db": {
+      "host": "%env(string:DB_HOST)%",
+      "port": "%env(string:DB_PORT)%",
+      "user": "%env(string:DB_USER)%",
+      "#password": "%env(string:DB_PASSWORD)%",
+      "database": "%env(string:DB_DATABASE)%"
+    },
+    "tableId": "incremental",
+    "dbName": "incremental",
+    "export": true,
+    "incremental": true,
+    "primaryKey": [],
+    "items": [
+      {
+        "name": "name",
+        "dbName": "name",
+        "type": "VARCHAR",
+        "size": 255,
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "int",
+        "dbName": "int",
+        "type": "int",
+        "size": null,
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "float",
+        "dbName": "float",
+        "type": "FLOAT",
+        "size": null,
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "date",
+        "dbName": "date",
+        "type": "DATE",
+        "size": null,
+        "nullable": false,
+        "default": null
+      },
+      {
+        "name": "datetime",
+        "dbName": "datetime",
+        "type": "DATETIME",
+        "size": null,
+        "nullable": true,
+        "default": null
+      },
+      {
+        "name": "timestamp",
+        "dbName": "timestamp",
+        "type": "TIMESTAMP",
+        "size": null,
+        "nullable": true,
+        "default": null
+      }
+    ]
+  },
+  "storage": {
+    "input": {
+      "tables": [
+        {
+          "source": "incremental",
+          "destination": "incremental.csv"
+        }
+      ]
+    }
+  }
+}

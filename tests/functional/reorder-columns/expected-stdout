@@ -1,0 +1,4 @@
+Creating PDO connection to "mysql:host=mysql;port=3306;dbname=test".
+Dropping table "simple"
+Creating table "simple"
+Data written to table "simple".
