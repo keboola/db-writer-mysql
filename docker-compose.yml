@@ -1,9 +1,8 @@
-version: "3"
 services:
   app: &main
     build: .
     image: keboola/db-writer-mysql
-    working_dir: /code
+    command: composer ci
     environment:
       DB_HOST: mysql
       DB_SSL_HOST: mysql-ssl
@@ -14,14 +13,17 @@ services:
       DB_DATABASE: test
     volumes:
       - ./docker/ssl/certificates:/ssl-cert
-      - ssh-keys:/root/.ssh
+      - ssh-keys:/root/.ssh:ro
     links:
       - mysql
       - mysql-ssl
       - mysql-ssl:mysql-different-cn
       - sshproxy
     depends_on:
-      - sshproxy
+      mysql:
+        condition: service_healthy
+      mysql-ssl:
+        condition: service_healthy
 
   dev:
     <<: *main
@@ -31,42 +33,33 @@ services:
       - ssh-keys:/root/.ssh
       - ./data/:/data/
 
-  wait:
-    image: waisbrot/wait
-    depends_on:
-      - mysql
-      - mysql-ssl
-      - sshproxy
-    environment:
-      - TARGETS=mysql:3306,mysql-ssl:3306,sshproxy:22
-      - TIMEOUT=120
-
-  mysql:
+  mysql: &mysql
     image: mysql:${MYSQL_VERSION:-latest}
-    command: mysqld --local-infile --port=3306 --default-authentication-plugin=mysql_native_password
-    ports:
-      - "3306:3306"
+    entrypoint: /usr/local/bin/entrypoint.sh
+    volumes:
+      - ./docker/mysql-entrypoint.sh:/usr/local/bin/entrypoint.sh
     environment:
       MYSQL_DATABASE: test
       MYSQL_ROOT_PASSWORD: rootpassword
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mysql-ssl:
-    image: mysql:${MYSQL_VERSION:-latest}
-    command: mysqld --local-infile --port=3306 --default-authentication-plugin=mysql_native_password
+    <<: *mysql
     volumes:
       - ./docker/ssl/certificates:/ssl-cert
       - ./docker/mysql-ssl/${MYSQL_VERSION}/conf.d:/etc/mysql/conf.d
-    environment:
-      MYSQL_DATABASE: test
-      MYSQL_ROOT_PASSWORD: rootpassword
+      - ./docker/mysql-entrypoint.sh:/usr/local/bin/entrypoint.sh
 
   sshproxy:
     image: keboola/db-component-ssh-proxy:latest
-    links: 
-      - mysql
-      - mysql-ssl
     volumes:
       - ssh-keys:/root/.ssh
+    links:
+      - mysql
 
 volumes:
   ssh-keys:
