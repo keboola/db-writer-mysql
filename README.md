@@ -2,9 +2,9 @@
 
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/keboola/db-writer-mysql/blob/master/LICENSE.md)
 
-Imports CSV data into MySQL Database.
+This component imports CSV data from Keboola into a MySQL database.
 
-## Example configuration
+## Example Configuration
 
 ```json
     {
@@ -63,14 +63,14 @@ Imports CSV data into MySQL Database.
 
 ## Development
 
-1. Install dependencies
+1. Install dependencies:
 
-        docker-compose run --rm dev composer install
+        `docker-compose run --rm dev composer install`
 
 2. Run tests:
 
-        docker-compose run --rm tests
+        `docker-compose run --rm tests`
 
 ## License
 
-MIT licensed, see [LICENSE](./LICENSE) file.
+MIT licensed, see the [LICENSE](./LICENSE) file.
