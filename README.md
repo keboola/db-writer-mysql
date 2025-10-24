@@ -65,11 +65,11 @@ Imports CSV data into MySQL Database.
 
 1. Install dependencies
 
-        docker-compose run --rm dev composer install
+        docker compose run --rm dev composer install
 
 2. Run tests:
 
-        docker-compose run --rm tests
+        docker compose run --rm tests
 
 ## License
 
