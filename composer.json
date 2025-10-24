@@ -16,7 +16,7 @@
         "ext-json": "*",
         "ext-mbstring": "*",
         "keboola/csv": "^1.4",
-        "keboola/db-writer-common": "^5.7",
+        "keboola/db-writer-common": "^5.8",
         "keboola/php-temp": "^1.0",
         "keboola/retry": "^0.5.0",
         "symfony/config": "^4.1",

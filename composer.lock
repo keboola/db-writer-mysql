@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2348e87793602171aa33d1a46673addd",
+    "content-hash": "86bdbfce9556395d1205663c360799b8",
     "packages": [
         {
             "name": "keboola/csv",
@@ -54,16 +54,16 @@
         },
         {
             "name": "keboola/db-writer-common",
-            "version": "5.7.1",
+            "version": "5.8.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/db-writer-common.git",
-                "reference": "82cfa15a5eb0ba2c1428c4889e0740ef5586ef34"
+                "reference": "1b2023c613869a7c001fe2b2a1b98ad1596ad670"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/db-writer-common/zipball/82cfa15a5eb0ba2c1428c4889e0740ef5586ef34",
-                "reference": "82cfa15a5eb0ba2c1428c4889e0740ef5586ef34",
+                "url": "https://api.github.com/repos/keboola/db-writer-common/zipball/1b2023c613869a7c001fe2b2a1b98ad1596ad670",
+                "reference": "1b2023c613869a7c001fe2b2a1b98ad1596ad670",
                 "shasum": ""
             },
             "require": {
@@ -109,7 +109,11 @@
                 "library",
                 "writer"
             ],
-            "time": "2020-09-09T12:37:14+00:00"
+            "support": {
+                "issues": "https://github.com/keboola/db-writer-common/issues",
+                "source": "https://github.com/keboola/db-writer-common/tree/5.8.1"
+            },
+            "time": "2021-01-22T06:44:47+00:00"
         },
         {
             "name": "keboola/php-temp",
@@ -2747,7 +2751,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {
@@ -2756,6 +2760,6 @@
         "ext-json": "*",
         "ext-mbstring": "*"
     },
-    "platform-dev": [],
-    "plugin-api-version": "2.3.0"
+    "platform-dev": {},
+    "plugin-api-version": "2.6.0"
 }
