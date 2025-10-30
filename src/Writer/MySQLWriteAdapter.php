@@ -68,4 +68,12 @@ class MySQLWriteAdapter extends PdoWriteAdapter
             ));
         }
     }
+
+    public function drop(string $tableName): void
+    {
+        if (!$this->tableExists($tableName)) {
+            return;
+        }
+        parent::drop($tableName);
+    }
 }

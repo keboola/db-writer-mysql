@@ -1,5 +1,4 @@
 Creating PDO connection to "mysql:host=mysql;port=3306;dbname=test".
-Dropping table "%s"
 Creating temporary table "%s"
 SQLSTATE[42S22]: Column not found: 1054 Unknown column 'name' in 'field list'. Retrying... [1x]
 SQLSTATE[42S22]: Column not found: 1054 Unknown column 'name' in 'field list'. Retrying... [2x]

@@ -1,5 +1,4 @@
 Creating PDO connection to "mysql:host=mysql-ssl;port=3306;dbname=test".
 Using SSL cipher: %s
-Dropping table "simple"
 Creating table "simple"
 Data written to table "simple".
