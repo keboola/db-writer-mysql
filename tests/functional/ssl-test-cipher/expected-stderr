@@ -1,1 +1,1 @@
-Error connecting to DB: PDO::__construct(): Cannot connect to MySQL by using SSL
+Error connecting to DB: SQLSTATE[HY000] [2002] Cannot connect to MySQL using SSL
