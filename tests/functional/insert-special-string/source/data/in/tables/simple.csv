@@ -1,0 +1,12 @@
+"col1","col2"
+"line with enclosure","second column"
+"column with enclosure "", and comma inside text","second column enclosure in text """
+"columns with
+new line","columns with 	tab"
+"column with backslash \ inside","column with backslash and enclosure \"""
+"column with \n \t \\","second col"
+"single quote'","two single''quotes"
+"first","something with
+
+double new line"
+"emoji","Hola hola, škola volá!😜 Nevěš hlavu a ber to jako..."

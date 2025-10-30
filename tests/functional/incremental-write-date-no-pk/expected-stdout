@@ -1,0 +1,6 @@
+Creating PDO connection to "mysql:host=mysql;port=3306;dbname=test".
+Dropping table "%s"
+Creating temporary table "%s"
+Data written to table "%s".
+Upserting data into table "incremental"
+Upserted data into table "incremental"

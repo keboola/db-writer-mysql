@@ -6,28 +6,31 @@
     "keywords": ["keboola", "mysql", "db", "writer"],
     "authors": [
         {
-            "name": "Erik Zigo",
-            "email": "erik.zigo@keboola.com"
+            "name": "Keboola",
+            "email": "devel@keboola.com"
         }
     ],
     "require": {
-        "php": "^7.3",
+        "php": "^8.2",
         "ext-PDO": "*",
         "ext-json": "*",
         "ext-mbstring": "*",
-        "keboola/csv": "^1.4",
-        "keboola/db-writer-common": "^5.7",
-        "keboola/php-temp": "^1.0",
-        "keboola/retry": "^0.5.0",
-        "symfony/config": "^4.1",
-        "symfony/filesystem": "^4.3",
-        "symfony/process": "^4.0"
+        "keboola/csv": "^3.3",
+        "keboola/db-writer-adapter": "^0.1",
+        "keboola/db-writer-common": "^6.2",
+        "keboola/db-writer-config": "^0.1",
+        "keboola/php-component": "^9.4",
+        "keboola/php-temp": "^2.0",
+        "keboola/retry": "^0.5.1",
+        "symfony/config": "^6.3",
+        "symfony/filesystem": "^6.3",
+        "symfony/process": "^5.4"
     },
     "require-dev": {
-        "keboola/coding-standard": "^13.0",
-        "keboola/datadir-tests": "^3.0",
-        "phpstan/phpstan": "^1.5",
-        "phpunit/phpunit": "^7.0"
+        "keboola/coding-standard": "^15.0",
+        "keboola/datadir-tests": "^5.6",
+        "phpstan/phpstan": "^1.10",
+        "phpunit/phpunit": "^9.6"
     },
     "autoload": {
         "psr-4": {
@@ -37,23 +40,25 @@
     "autoload-dev": {
         "psr-4": {
             "Keboola\\DbWriter\\FunctionalTests\\": "tests/functional/",
+            "Keboola\\DbWriter\\TraitTests\\": "tests/traits/",
             "Keboola\\DbWriter\\Tests\\": "tests/phpunit/"
         }
     },
     "scripts": {
-        "tests-phpunit": "phpunit",
-        "tests-datadir": "phpunit tests/functional",
+        "tests-phpunit": "phpunit --testsuite unit",
+        "tests-datadir": "phpunit --testsuite functional",
+        "tests-perf": "phpunit --testsuite perf",
         "tests": [
             "@tests-phpunit",
-            "@tests-datadir"
+            "@tests-datadir",
+            "@tests-perf"
         ],
         "phpcs": "phpcs -n --ignore=vendor --extensions=php .",
         "phpcbf": "phpcbf -n --ignore=vendor --extensions=php .",
-        "phpstan": "phpstan analyse ./src ./tests --level=0 --no-progress",
-        "generate-ssh-keys": "source ./vendor/keboola/db-writer-common/tests/generate-ssh-keys.sh",
+        "phpstan": "phpstan analyse --no-progress --level=max ./src ./tests -c phpstan.neon",
         "build": [
-            "@phpstan",
             "@phpcs",
+            "@phpstan",
             "@tests"
         ],
         "ci": [

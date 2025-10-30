@@ -1,0 +1,2 @@
+Unknown table 'test.%s'
+SQLSTATE[42S22]: Column not found: 1054 Unknown column 'name' in 'field list'

@@ -1,0 +1,1 @@
+Error connecting to DB: PDO::__construct(): Peer certificate CN=`mysql-ssl' did not match expected CN=`mysql-different-cn'

@@ -4,41 +4,63 @@ declare(strict_types=1);
 
 namespace Keboola\DbWriter\FunctionalTests;
 
-use Keboola\Csv\CsvFile;
+use Keboola\Csv\CsvWriter;
+use Keboola\Csv\Exception;
+use Keboola\Csv\InvalidArgumentException;
 use Keboola\DatadirTests\AbstractDatadirTestCase;
 use Keboola\DatadirTests\DatadirTestSpecificationInterface;
 use Keboola\DatadirTests\DatadirTestsProviderInterface;
-use Keboola\Temp\Temp;
-use PDO;
+use Keboola\DbWriter\TraitTests\CloseSshTunnelsTrait;
+use Keboola\DbWriter\Writer\MySQLConnection;
+use Keboola\DbWriter\Writer\MySQLConnectionFactory;
+use Keboola\DbWriterConfig\Configuration\ValueObject\DatabaseConfig;
+use Psr\Log\Test\TestLogger;
+use RuntimeException;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Process\Process;
 
 class DatadirTest extends AbstractDatadirTestCase
 {
+    use CloseSshTunnelsTrait;
 
-    /** @var PDO $connection */
-    private $connection;
+    public MySQLConnection $connection;
 
-    /** @var array $config */
-    private $config;
-
-    /** @var string $dataDir */
-    private $dataDir;
+    protected string $testProjectDir;
 
     public function __construct(
         ?string $name = null,
         array $data = [],
-        string $dataName = ''
+        string $dataName = '',
     ) {
+        putenv('SSH_PRIVATE_KEY=' . file_get_contents('/root/.ssh/id_rsa'));
+        putenv('SSH_PUBLIC_KEY=' . file_get_contents('/root/.ssh/id_rsa.pub'));
+        putenv('SSL_CA=' . file_get_contents('/ssl-cert/ca-cert.pem'));
+        putenv('SSL_CERT=' . file_get_contents('/ssl-cert/client-cert.pem'));
+        putenv('SSL_KEY=' . file_get_contents('/ssl-cert/client-key.pem'));
         parent::__construct($name, $data, $dataName);
-        $this->config = $this->getDatabaseConfig();
-        $this->connection = $this->createConnection($this->config);
+        $this->connection = MySQLConnectionFactory::create($this->getDatabaseConfig(), new TestLogger());
     }
 
     public function setUp(): void
     {
         parent::setUp();
+        $this->connection = MySQLConnectionFactory::create($this->getDatabaseConfig(), new TestLogger());
+        $this->closeSshTunnels();
         $this->dropTables();
+
+        $this->testProjectDir = $this->getTestFileDir() . '/' . $this->dataName();
+
+        // Load setUp.php file - used to init database state
+        $setUpPhpFile = $this->testProjectDir . '/setUp.php';
+        if (file_exists($setUpPhpFile)) {
+            // Get callback from file and check it
+            $initCallback = require $setUpPhpFile;
+            if (!is_callable($initCallback)) {
+                throw new RuntimeException(sprintf('File "%s" must return callback!', $setUpPhpFile));
+            }
+
+            // Invoke callback
+            $initCallback($this);
+        }
     }
 
     /**
@@ -47,10 +69,6 @@ class DatadirTest extends AbstractDatadirTestCase
     public function testDatadir(DatadirTestSpecificationInterface $specification): void
     {
         $tempDatadir = $this->getTempDatadir($specification);
-
-        $this->dataDir = $tempDatadir->getTmpFolder();
-
-        $this->dropTables();
 
         $process = $this->runScript($tempDatadir->getTmpFolder());
 
@@ -69,44 +87,31 @@ class DatadirTest extends AbstractDatadirTestCase
         ];
     }
 
-    protected function getScript(): string
-    {
-        return sprintf(
-            '%s/../../run.php --data=%s/',
-            $this->getTestFileDir(),
-            $this->dataDir
-        );
-    }
-
-    protected function runScript(string $datadirPath): Process
-    {
-        $script = $this->getScript();
-
-        $runCommand = 'php ' . $script;
-        $runProcess = Process::fromShellCommandline($runCommand);
-        $runProcess->setTimeout(0);
-        $runProcess->run();
-        return $runProcess;
-    }
-
     private function getMysqlVersion(): int
     {
-        $version = $this->connection->query('SELECT VERSION();')->fetch();
-        return (int) $version[0];
+        /** @var array{array{
+         *     version: string
+         * }} $version
+         */
+        $version = $this->connection->fetchAll('SELECT VERSION() as version;', 3);
+        return (int) $version[0]['version'];
     }
 
     private function dropTables(): void
     {
         foreach ($this->getTableNames() as $tableName) {
-            $this->connection->query(sprintf('DROP TABLE IF EXISTS `%s`', $tableName))->execute();
+            $this->connection->exec(sprintf('DROP TABLE IF EXISTS `%s`', $tableName));
         }
     }
 
+    /**
+     * @throws Exception|InvalidArgumentException
+     */
     private function dumpTables(string $tmpFolder): void
     {
         $dumpDir = $tmpFolder . '/out/db-dump';
         $fs = new Filesystem();
-        $fs->mkdir($dumpDir, 0777);
+        $fs->mkdir($dumpDir);
 
         foreach ($this->getTableNames() as $tableName) {
             $this->dumpTableData($tableName, $dumpDir);
@@ -115,23 +120,26 @@ class DatadirTest extends AbstractDatadirTestCase
 
     private function getTableNames(): array
     {
-        $tables = $this->connection->query(
+        $tables = $this->connection->fetchAll(
             sprintf(
                 'SELECT TABLE_NAME FROM information_schema.tables WHERE table_schema = \'%s\';',
-                $this->config['database']
-            )
-        )->fetchAll(PDO::FETCH_ASSOC);
+                getenv('DB_DATABASE'),
+            ),
+        );
 
         return array_map(function ($item) {
             return $item['TABLE_NAME'];
         }, $tables);
     }
 
+    /**
+     * @throws Exception|InvalidArgumentException
+     */
     private function dumpTableData(string $tableName, string $tmpFolder): void
     {
-        $csvDumpFile = new CsvFile(sprintf('%s/%s.csv', $tmpFolder, $tableName));
+        $csvDumpFile = new CsvWriter(sprintf('%s/%s.csv', $tmpFolder, $tableName));
 
-        $rows = $this->connection->query(sprintf('SELECT * FROM `%s`', $tableName))->fetchAll(PDO::FETCH_ASSOC);
+        $rows = $this->connection->fetchAll(sprintf('SELECT * FROM `%s`', $tableName));
         if ($rows) {
             $csvDumpFile->writeRow(array_keys(current($rows)));
             foreach ($rows as $row) {
@@ -140,32 +148,25 @@ class DatadirTest extends AbstractDatadirTestCase
         }
     }
 
-    private function createConnection(array $config): PDO
+    private function getDatabaseConfig(): DatabaseConfig
     {
-        $dsn = sprintf(
-            'mysql:host=%s;port=%s;dbname=%s',
-            $config['host'],
-            $config['port'],
-            $config['database']
-        );
-
-        $db = new PDO(
-            $dsn,
-            $config['user'],
-            $config['password']
-        );
-        $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-        return $db;
-    }
-
-    private function getDatabaseConfig(): array
-    {
-        return [
-            'host' => getenv('DB_HOST'),
+        $isSsl = str_starts_with((string) $this->dataName(), 'ssl-');
+        $config = [
+            'host' => $isSsl ? getenv('DB_SSL_HOST') : getenv('DB_HOST'),
             'port' => getenv('DB_PORT'),
             'database' => getenv('DB_DATABASE'),
             'user' => getenv('DB_USER'),
-            'password' => getenv('DB_PASSWORD'),
+            '#password' => getenv('DB_PASSWORD'),
         ];
+        if ($isSsl) {
+            $config['ssl'] = [
+                'enabled' => true,
+                'ca' => getenv('SSL_CA'),
+                'cert' => getenv('SSL_CERT'),
+                '#key' => getenv('SSL_KEY'),
+            ];
+        }
+
+        return DatabaseConfig::fromArray($config);
     }
 }
