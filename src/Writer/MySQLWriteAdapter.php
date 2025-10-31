@@ -69,6 +69,11 @@ class MySQLWriteAdapter extends PdoWriteAdapter
         }
     }
 
+    public function validateTable(string $tableName, array $items): void
+    {
+        // Don't validate table column types for MySQL - for BC reasons
+    }
+
     public function drop(string $tableName): void
     {
         if (!$this->tableExists($tableName)) {
