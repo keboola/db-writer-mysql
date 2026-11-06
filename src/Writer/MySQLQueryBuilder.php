@@ -20,6 +20,58 @@ class MySQLQueryBuilder extends DefaultQueryBuilder
     {
     }
 
+    /**
+     * @param ItemConfig[] $items
+     * @throws PropertyNotSetException
+     */
+    public function createQueryStatement(
+        Connection $connection,
+        string $tableName,
+        bool $isTempTable,
+        array $items,
+        ?array $primaryKeys = null,
+    ): string {
+        $createTable = sprintf(
+            'CREATE %s TABLE `%s`',
+            $isTempTable ? 'TEMPORARY' : '',
+            $tableName,
+        );
+
+        $filteredItems = array_filter(
+            $items,
+            fn(ItemConfig $itemConfig) => strtolower($itemConfig->getType()) !== 'ignore',
+        );
+
+        $columnsDefinition = array_map(
+            fn(ItemConfig $itemConfig) => sprintf(
+                '%s %s%s %s %s',
+                $connection->quoteIdentifier($itemConfig->getDbName()),
+                $itemConfig->getType(),
+                $itemConfig->hasSize() ? sprintf('(%s)', $itemConfig->getSize()) : '',
+                $itemConfig->getNullable() ? 'NULL' : 'NOT NULL',
+                $itemConfig->hasDefault() && $itemConfig->getType() !== 'TEXT' ?
+                    'DEFAULT ' . $this->createColumnDefault($connection, $itemConfig) :
+                    '',
+            ),
+            $filteredItems,
+        );
+
+        if ($primaryKeys) {
+            $columnsDefinition[] = sprintf(
+                'PRIMARY KEY (%s)',
+                implode(',', array_map(fn($item) => $connection->quoteIdentifier($item), $primaryKeys)),
+            );
+        }
+
+        return sprintf(
+            '%s (%s) DEFAULT CHARSET=%s COLLATE=%s_unicode_ci;',
+            $createTable,
+            implode(',', $columnsDefinition),
+            $this->charset,
+            $this->charset,
+        );
+    }
+
     public function writeDataQueryStatement(
         Connection $connection,
         string $tableName,
@@ -337,6 +389,20 @@ SQL;
         }
 
         return $result;
+    }
+
+    /**
+     * @throws PropertyNotSetException
+     */
+    private function createColumnDefault(Connection $connection, ItemConfig $item): string
+    {
+        $default = $item->getDefault();
+        // MySQL rejects a quoted string as a BIT default (error 1067).
+        if (strtolower($item->getType()) === 'bit' && preg_match('/^[01]+$/', $default)) {
+            return sprintf("b'%s'", $default);
+        }
+
+        return $connection->quote($default);
     }
 
     /**
