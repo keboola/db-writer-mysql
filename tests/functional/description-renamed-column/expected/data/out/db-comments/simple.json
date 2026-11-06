@@ -1,0 +1,8 @@
+{
+  "table": "Bob's \"people\" table",
+  "columns": {
+    "id": "Row identifier",
+    "full_name": "Person's full name",
+    "glasses": ""
+  }
+}

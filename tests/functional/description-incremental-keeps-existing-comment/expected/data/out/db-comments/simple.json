@@ -1,0 +1,8 @@
+{
+  "table": "New table description",
+  "columns": {
+    "id": "Row identifier",
+    "name": "Existing name comment",
+    "glasses": "Existing glasses comment"
+  }
+}

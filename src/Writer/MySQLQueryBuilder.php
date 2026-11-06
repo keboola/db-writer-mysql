@@ -119,6 +119,90 @@ SQL;
         );
     }
 
+    public function tableCommentQueryStatement(Connection $connection, string $tableName, string $comment): string
+    {
+        return sprintf(
+            'ALTER TABLE %s COMMENT = %s',
+            $connection->quoteIdentifier($tableName),
+            $connection->quote($comment),
+        );
+    }
+
+    public function columnDefinitionsQueryStatement(Connection $connection, string $tableName): string
+    {
+        return sprintf(
+            'SELECT COLUMN_NAME AS COLUMN_NAME, COLUMN_TYPE AS COLUMN_TYPE, IS_NULLABLE AS IS_NULLABLE, '
+            . 'COLUMN_DEFAULT AS COLUMN_DEFAULT, EXTRA AS EXTRA, CHARACTER_SET_NAME AS CHARACTER_SET_NAME, '
+            . 'COLLATION_NAME AS COLLATION_NAME '
+            . 'FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s '
+            . 'ORDER BY ORDINAL_POSITION',
+            $connection->quote($tableName),
+        );
+    }
+
+    /**
+     * Rebuilds a column definition (without name and comment) from an INFORMATION_SCHEMA.COLUMNS row.
+     *
+     * @param array{
+     *     COLUMN_TYPE: string,
+     *     IS_NULLABLE: string,
+     *     COLUMN_DEFAULT: ?string,
+     *     EXTRA: ?string,
+     *     CHARACTER_SET_NAME: ?string,
+     *     COLLATION_NAME: ?string,
+     * } $column
+     */
+    public function columnDefinition(Connection $connection, array $column, bool $isMariaDb): string
+    {
+        $definition = $column['COLUMN_TYPE'];
+        if ($column['CHARACTER_SET_NAME'] !== null && $column['COLLATION_NAME'] !== null) {
+            $definition .= sprintf(
+                ' CHARACTER SET %s COLLATE %s',
+                $column['CHARACTER_SET_NAME'],
+                $column['COLLATION_NAME'],
+            );
+        }
+        $definition .= $column['IS_NULLABLE'] === 'YES' ? ' NULL' : ' NOT NULL';
+
+        $default = $this->columnDefaultExpression($connection, $column, $isMariaDb);
+        if ($default !== null) {
+            $definition .= ' DEFAULT ' . $default;
+        }
+
+        // DEFAULT_GENERATED is an INFORMATION_SCHEMA marker, not valid column syntax.
+        $extra = trim((string) preg_replace('/\bDEFAULT_GENERATED\b/i', '', (string) $column['EXTRA']));
+        if ($extra !== '') {
+            $definition .= ' ' . $extra;
+        }
+
+        return $definition;
+    }
+
+    /**
+     * @param array<string, array{definition: string, comment: string}> $columns keyed by column name
+     */
+    public function modifyColumnCommentsQueryStatement(
+        Connection $connection,
+        string $tableName,
+        array $columns,
+    ): string {
+        $modifications = [];
+        foreach ($columns as $columnName => $column) {
+            $modifications[] = sprintf(
+                'MODIFY COLUMN %s %s COMMENT %s',
+                $connection->quoteIdentifier((string) $columnName),
+                $column['definition'],
+                $connection->quote($column['comment']),
+            );
+        }
+
+        return sprintf(
+            'ALTER TABLE %s %s',
+            $connection->quoteIdentifier($tableName),
+            implode(', ', $modifications),
+        );
+    }
+
     public function getPrimaryKeysQuery(Connection $connection, string $tableName): string
     {
         return sprintf(
@@ -253,6 +337,40 @@ SQL;
         }
 
         return $result;
+    }
+
+    /**
+     * @param array{COLUMN_TYPE: string, COLUMN_DEFAULT: ?string, EXTRA: ?string} $column
+     */
+    private function columnDefaultExpression(Connection $connection, array $column, bool $isMariaDb): ?string
+    {
+        $default = $column['COLUMN_DEFAULT'];
+        if ($default === null) {
+            return null;
+        }
+
+        // MariaDB returns defaults as SQL expressions: literals quoted, NULL as the word NULL.
+        if ($isMariaDb) {
+            return strtoupper($default) === 'NULL' ? null : $default;
+        }
+
+        if (preg_match('/^(CURRENT_TIMESTAMP|NOW|LOCALTIME|LOCALTIMESTAMP)(\(\d*\))?$/i', $default)) {
+            return $default;
+        }
+        if (preg_match('/\bDEFAULT_GENERATED\b/i', (string) $column['EXTRA'])) {
+            // INFORMATION_SCHEMA returns expression defaults with quotes and backslashes escaped once more.
+            return sprintf('(%s)', preg_replace('/\\\\([\\\\\'])/', '$1', $default));
+        }
+        $type = strtolower($column['COLUMN_TYPE']);
+        if (str_starts_with($type, 'bit') && preg_match("/^b'[01]*'$/", $default)) {
+            return $default;
+        }
+        $isBinaryType = (bool) preg_match('/^((var)?binary|(tiny|medium|long)?blob)\b/', $type);
+        if ($isBinaryType && preg_match('/^0x[0-9a-f]*$/i', $default)) {
+            return $default;
+        }
+
+        return $connection->quote($default);
     }
 
     /**

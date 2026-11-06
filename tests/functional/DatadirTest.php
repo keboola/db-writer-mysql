@@ -26,6 +26,8 @@ class DatadirTest extends AbstractDatadirTestCase
 
     protected string $testProjectDir;
 
+    public bool $dumpComments = false;
+
     public function __construct(
         ?string $name = null,
         array $data = [],
@@ -46,6 +48,7 @@ class DatadirTest extends AbstractDatadirTestCase
         $this->connection = MySQLConnectionFactory::create($this->getDatabaseConfig(), new TestLogger());
         $this->closeSshTunnels();
         $this->dropTables();
+        $this->dumpComments = false;
 
         $this->testProjectDir = $this->getTestFileDir() . '/' . $this->dataName();
 
@@ -73,6 +76,9 @@ class DatadirTest extends AbstractDatadirTestCase
         $process = $this->runScript($tempDatadir->getTmpFolder());
 
         $this->dumpTables($tempDatadir->getTmpFolder());
+        if ($this->dumpComments) {
+            $this->dumpComments($tempDatadir->getTmpFolder());
+        }
 
         $this->assertMatchesSpecification($specification, $process, $tempDatadir->getTmpFolder());
     }
@@ -115,6 +121,40 @@ class DatadirTest extends AbstractDatadirTestCase
 
         foreach ($this->getTableNames() as $tableName) {
             $this->dumpTableData($tableName, $dumpDir);
+        }
+    }
+
+    private function dumpComments(string $tmpFolder): void
+    {
+        $dumpDir = $tmpFolder . '/out/db-comments';
+        $fs = new Filesystem();
+        $fs->mkdir($dumpDir);
+
+        foreach ($this->getTableNames() as $tableName) {
+            /** @var array{TABLE_COMMENT: string}[] $table */
+            $table = $this->connection->fetchAll(sprintf(
+                'SELECT TABLE_COMMENT AS TABLE_COMMENT FROM INFORMATION_SCHEMA.TABLES '
+                . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
+                $this->connection->quote($tableName),
+            ));
+            /** @var array{COLUMN_NAME: string, COLUMN_COMMENT: string}[] $columns */
+            $columns = $this->connection->fetchAll(sprintf(
+                'SELECT COLUMN_NAME AS COLUMN_NAME, COLUMN_COMMENT AS COLUMN_COMMENT FROM INFORMATION_SCHEMA.COLUMNS '
+                . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s ORDER BY ORDINAL_POSITION',
+                $this->connection->quote($tableName),
+            ));
+
+            $comments = [
+                'table' => $table[0]['TABLE_COMMENT'] ?? null,
+                'columns' => array_combine(
+                    array_column($columns, 'COLUMN_NAME'),
+                    array_column($columns, 'COLUMN_COMMENT'),
+                ),
+            ];
+            file_put_contents(
+                sprintf('%s/%s.json', $dumpDir, $tableName),
+                json_encode($comments, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . "\n",
+            );
         }
     }
 
