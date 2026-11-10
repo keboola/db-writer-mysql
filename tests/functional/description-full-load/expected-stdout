@@ -1,0 +1,6 @@
+Creating PDO connection to "mysql:host=mysql;port=3306;dbname=test".
+Creating table "simple"
+Data written to table "simple".
+Setting comment on table "simple"
+Setting comment on column "id" in table "simple"
+Setting comment on column "name" in table "simple"

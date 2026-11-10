@@ -20,6 +20,58 @@ class MySQLQueryBuilder extends DefaultQueryBuilder
     {
     }
 
+    /**
+     * @param ItemConfig[] $items
+     * @throws PropertyNotSetException
+     */
+    public function createQueryStatement(
+        Connection $connection,
+        string $tableName,
+        bool $isTempTable,
+        array $items,
+        ?array $primaryKeys = null,
+    ): string {
+        $createTable = sprintf(
+            'CREATE %s TABLE `%s`',
+            $isTempTable ? 'TEMPORARY' : '',
+            $tableName,
+        );
+
+        $filteredItems = array_filter(
+            $items,
+            fn(ItemConfig $itemConfig) => strtolower($itemConfig->getType()) !== 'ignore',
+        );
+
+        $columnsDefinition = array_map(
+            fn(ItemConfig $itemConfig) => sprintf(
+                '%s %s%s %s %s',
+                $connection->quoteIdentifier($itemConfig->getDbName()),
+                $itemConfig->getType(),
+                $itemConfig->hasSize() ? sprintf('(%s)', $itemConfig->getSize()) : '',
+                $itemConfig->getNullable() ? 'NULL' : 'NOT NULL',
+                $itemConfig->hasDefault() && $itemConfig->getType() !== 'TEXT' ?
+                    'DEFAULT ' . $this->createColumnDefault($connection, $itemConfig) :
+                    '',
+            ),
+            $filteredItems,
+        );
+
+        if ($primaryKeys) {
+            $columnsDefinition[] = sprintf(
+                'PRIMARY KEY (%s)',
+                implode(',', array_map(fn($item) => $connection->quoteIdentifier($item), $primaryKeys)),
+            );
+        }
+
+        return sprintf(
+            '%s (%s) DEFAULT CHARSET=%s COLLATE=%s_unicode_ci;',
+            $createTable,
+            implode(',', $columnsDefinition),
+            $this->charset,
+            $this->charset,
+        );
+    }
+
     public function writeDataQueryStatement(
         Connection $connection,
         string $tableName,
@@ -116,6 +168,99 @@ SQL;
             $connection->quoteIdentifier($exportConfig->getDbName()),
             $columns,
             $connection->quoteIdentifier($stageTableName),
+        );
+    }
+
+    public function tableCommentQueryStatement(Connection $connection, string $tableName, string $comment): string
+    {
+        return sprintf(
+            'ALTER TABLE %s COMMENT = %s',
+            $connection->quoteIdentifier($tableName),
+            $connection->quote($comment),
+        );
+    }
+
+    public function tableCommentSelectQueryStatement(Connection $connection, string $tableName): string
+    {
+        return sprintf(
+            'SELECT TABLE_COMMENT AS TABLE_COMMENT FROM INFORMATION_SCHEMA.TABLES '
+            . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
+            $connection->quote($tableName),
+        );
+    }
+
+    public function columnDefinitionsQueryStatement(Connection $connection, string $tableName): string
+    {
+        return sprintf(
+            'SELECT COLUMN_NAME AS COLUMN_NAME, COLUMN_TYPE AS COLUMN_TYPE, IS_NULLABLE AS IS_NULLABLE, '
+            . 'COLUMN_DEFAULT AS COLUMN_DEFAULT, EXTRA AS EXTRA, CHARACTER_SET_NAME AS CHARACTER_SET_NAME, '
+            . 'COLLATION_NAME AS COLLATION_NAME, COLUMN_COMMENT AS COLUMN_COMMENT '
+            . 'FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s '
+            . 'ORDER BY ORDINAL_POSITION',
+            $connection->quote($tableName),
+        );
+    }
+
+    /**
+     * Rebuilds a column definition (without name and comment) from an INFORMATION_SCHEMA.COLUMNS row.
+     *
+     * @param array{
+     *     COLUMN_TYPE: string,
+     *     IS_NULLABLE: string,
+     *     COLUMN_DEFAULT: ?string,
+     *     EXTRA: ?string,
+     *     CHARACTER_SET_NAME: ?string,
+     *     COLLATION_NAME: ?string,
+     * } $column
+     */
+    public function columnDefinition(Connection $connection, array $column, bool $isMariaDb): string
+    {
+        $definition = $column['COLUMN_TYPE'];
+        if ($column['CHARACTER_SET_NAME'] !== null && $column['COLLATION_NAME'] !== null) {
+            $definition .= sprintf(
+                ' CHARACTER SET %s COLLATE %s',
+                $column['CHARACTER_SET_NAME'],
+                $column['COLLATION_NAME'],
+            );
+        }
+        $definition .= $column['IS_NULLABLE'] === 'YES' ? ' NULL' : ' NOT NULL';
+
+        $default = $this->columnDefaultExpression($connection, $column, $isMariaDb);
+        if ($default !== null) {
+            $definition .= ' DEFAULT ' . $default;
+        }
+
+        // DEFAULT_GENERATED is an INFORMATION_SCHEMA marker, not valid column syntax.
+        $extra = trim((string) preg_replace('/\bDEFAULT_GENERATED\b/i', '', (string) $column['EXTRA']));
+        if ($extra !== '') {
+            $definition .= ' ' . $extra;
+        }
+
+        return $definition;
+    }
+
+    /**
+     * @param array<string, array{definition: string, comment: string}> $columns keyed by column name
+     */
+    public function modifyColumnCommentsQueryStatement(
+        Connection $connection,
+        string $tableName,
+        array $columns,
+    ): string {
+        $modifications = [];
+        foreach ($columns as $columnName => $column) {
+            $modifications[] = sprintf(
+                'MODIFY COLUMN %s %s COMMENT %s',
+                $connection->quoteIdentifier((string) $columnName),
+                $column['definition'],
+                $connection->quote($column['comment']),
+            );
+        }
+
+        return sprintf(
+            'ALTER TABLE %s %s',
+            $connection->quoteIdentifier($tableName),
+            implode(', ', $modifications),
         );
     }
 
@@ -253,6 +398,54 @@ SQL;
         }
 
         return $result;
+    }
+
+    /**
+     * @throws PropertyNotSetException
+     */
+    private function createColumnDefault(Connection $connection, ItemConfig $item): string
+    {
+        $default = $item->getDefault();
+        // MySQL rejects a quoted string as a BIT default (error 1067).
+        if (strtolower($item->getType()) === 'bit' && preg_match('/^[01]+$/', $default)) {
+            return sprintf("b'%s'", $default);
+        }
+
+        return $connection->quote($default);
+    }
+
+    /**
+     * @param array{COLUMN_TYPE: string, COLUMN_DEFAULT: ?string, EXTRA: ?string} $column
+     */
+    private function columnDefaultExpression(Connection $connection, array $column, bool $isMariaDb): ?string
+    {
+        $default = $column['COLUMN_DEFAULT'];
+        if ($default === null) {
+            return null;
+        }
+
+        // MariaDB returns defaults as SQL expressions: literals quoted, NULL as the word NULL.
+        if ($isMariaDb) {
+            return strtoupper($default) === 'NULL' ? null : $default;
+        }
+
+        if (preg_match('/^(CURRENT_TIMESTAMP|NOW|LOCALTIME|LOCALTIMESTAMP)(\(\d*\))?$/i', $default)) {
+            return $default;
+        }
+        if (preg_match('/\bDEFAULT_GENERATED\b/i', (string) $column['EXTRA'])) {
+            // INFORMATION_SCHEMA returns expression defaults with quotes and backslashes escaped once more.
+            return sprintf('(%s)', preg_replace('/\\\\([\\\\\'])/', '$1', $default));
+        }
+        $type = strtolower($column['COLUMN_TYPE']);
+        if (str_starts_with($type, 'bit') && preg_match("/^b'[01]*'$/", $default)) {
+            return $default;
+        }
+        $isBinaryType = (bool) preg_match('/^((var)?binary|(tiny|medium|long)?blob)\b/', $type);
+        if ($isBinaryType && preg_match('/^0x[0-9a-f]*$/i', $default)) {
+            return $default;
+        }
+
+        return $connection->quote($default);
     }
 
     /**

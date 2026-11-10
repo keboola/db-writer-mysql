@@ -1,0 +1,22 @@
+{
+  "columns": [
+    "id",
+    "name",
+    "glasses"
+  ],
+  "description": "Bob's \"people\" table",
+  "schema": [
+    {
+      "name": "id",
+      "description": "Row identifier"
+    },
+    {
+      "name": "name",
+      "description": "Person's full name"
+    },
+    {
+      "name": "glasses",
+      "description": ""
+    }
+  ]
+}

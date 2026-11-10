@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0a7a58dd293e89becc5d8e96372544db",
+    "content-hash": "45d8bbf1a7eb45c06c6031c0333adb9c",
     "packages": [
         {
             "name": "keboola/common-exceptions",
@@ -101,16 +101,16 @@
         },
         {
             "name": "keboola/db-writer-adapter",
-            "version": "0.1.0",
+            "version": "0.1.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/db-writer-adapter.git",
-                "reference": "fbce5499399dec04630f6166d435e1a19be87281"
+                "reference": "88c48f113e9161a1dc430bc2ecf44207f1152f8e"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/db-writer-adapter/zipball/fbce5499399dec04630f6166d435e1a19be87281",
-                "reference": "fbce5499399dec04630f6166d435e1a19be87281",
+                "url": "https://api.github.com/repos/keboola/db-writer-adapter/zipball/88c48f113e9161a1dc430bc2ecf44207f1152f8e",
+                "reference": "88c48f113e9161a1dc430bc2ecf44207f1152f8e",
                 "shasum": ""
             },
             "require": {
@@ -154,29 +154,29 @@
             ],
             "description": "MyComponent description",
             "support": {
-                "source": "https://github.com/keboola/db-writer-adapter/tree/0.1.0"
+                "source": "https://github.com/keboola/db-writer-adapter/tree/0.1.1"
             },
-            "time": "2024-02-09T20:17:55+00:00"
+            "time": "2026-11-06T13:04:01+00:00"
         },
         {
             "name": "keboola/db-writer-common",
-            "version": "6.2.0",
+            "version": "6.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/db-writer-common.git",
-                "reference": "7713b5b7cba10ffee5606adc00c978d86513007a"
+                "reference": "1c6aa5754e7de992f44047eef7b8d9e18ccc9a8d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/db-writer-common/zipball/7713b5b7cba10ffee5606adc00c978d86513007a",
-                "reference": "7713b5b7cba10ffee5606adc00c978d86513007a",
+                "url": "https://api.github.com/repos/keboola/db-writer-common/zipball/1c6aa5754e7de992f44047eef7b8d9e18ccc9a8d",
+                "reference": "1c6aa5754e7de992f44047eef7b8d9e18ccc9a8d",
                 "shasum": ""
             },
             "require": {
                 "ext-json": "*",
                 "ext-pdo": "*",
-                "keboola/db-writer-adapter": "^0.1",
-                "keboola/db-writer-config": "^0.1",
+                "keboola/db-writer-adapter": "^0.1.1",
+                "keboola/db-writer-config": "^0.1.4",
                 "keboola/php-component": "^9.4",
                 "keboola/retry": "^0.5.1",
                 "keboola/ssh-tunnel": "^2.0",
@@ -214,22 +214,22 @@
                 "writer"
             ],
             "support": {
-                "source": "https://github.com/keboola/db-writer-common/tree/6.2.0"
+                "source": "https://github.com/keboola/db-writer-common/tree/6.3.0"
             },
-            "time": "2024-10-10T08:38:33+00:00"
+            "time": "2026-11-09T11:38:21+00:00"
         },
         {
             "name": "keboola/db-writer-config",
-            "version": "0.1.2",
+            "version": "0.1.4",
             "source": {
                 "type": "git",
                 "url": "https://github.com/keboola/db-writer-config.git",
-                "reference": "1b35f0db5e506fe4067714fe68a2edb31dc9b3eb"
+                "reference": "37e43d26a5b9bbf33eae0ce3ea1e90f35495caf0"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/keboola/db-writer-config/zipball/1b35f0db5e506fe4067714fe68a2edb31dc9b3eb",
-                "reference": "1b35f0db5e506fe4067714fe68a2edb31dc9b3eb",
+                "url": "https://api.github.com/repos/keboola/db-writer-config/zipball/37e43d26a5b9bbf33eae0ce3ea1e90f35495caf0",
+                "reference": "37e43d26a5b9bbf33eae0ce3ea1e90f35495caf0",
                 "shasum": ""
             },
             "require": {
@@ -265,9 +265,9 @@
             ],
             "description": "Config definition for database writer component",
             "support": {
-                "source": "https://github.com/keboola/db-writer-config/tree/0.1.2"
+                "source": "https://github.com/keboola/db-writer-config/tree/0.1.4"
             },
-            "time": "2024-09-30T11:23:32+00:00"
+            "time": "2026-11-06T12:53:26+00:00"
         },
         {
             "name": "keboola/php-component",
@@ -3462,5 +3462,5 @@
         "ext-mbstring": "*"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
