@@ -12,6 +12,7 @@ use Keboola\DbWriterAdapter\ValueObject\TableDescriptions;
 use Keboola\DbWriterConfig\Configuration\ValueObject\DatabaseConfig;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\Test\TestLogger;
+use Throwable;
 
 class MySQLWriteAdapterDescriptionsDbTest extends TestCase
 {
@@ -21,13 +22,7 @@ class MySQLWriteAdapterDescriptionsDbTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->connection = MySQLConnectionFactory::create(DatabaseConfig::fromArray([
-            'host' => (string) getenv('DB_HOST'),
-            'port' => (string) getenv('DB_PORT'),
-            'database' => (string) getenv('DB_DATABASE'),
-            'user' => (string) getenv('DB_USER'),
-            '#password' => (string) getenv('DB_PASSWORD'),
-        ]), new TestLogger());
+        $this->connection = self::createConnection();
         $this->dropTable();
     }
 
@@ -82,14 +77,142 @@ class MySQLWriteAdapterDescriptionsDbTest extends TestCase
         ksort($expectedComments);
         ksort($actualComments);
         self::assertSame($expectedComments, $actualComments);
-        /** @var array{TABLE_COMMENT: string}[] $tableInfo */
-        $tableInfo = $this->connection->fetchAll(sprintf(
-            'SELECT TABLE_COMMENT AS TABLE_COMMENT FROM INFORMATION_SCHEMA.TABLES '
-            . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
-            $this->connection->quote(self::TABLE_NAME),
-        ));
-        self::assertSame('Table: it\'s "new"', $tableInfo[0]['TABLE_COMMENT']);
+        self::assertSame('Table: it\'s "new"', $this->tableComment());
         self::assertFalse($logger->hasWarningRecords());
+    }
+
+    /**
+     * @dataProvider connectionCharsetProvider
+     */
+    public function testFourByteCharactersAreStoredAsReplacement(string $charset): void
+    {
+        // utf8 is what MySQLConnectionFactory falls back to when utf8mb4 is not available.
+        $this->connection->exec(sprintf('SET NAMES %s', $charset));
+        $this->connection->exec(sprintf(
+            'CREATE TABLE %s (`id` INT NOT NULL, `name` VARCHAR(10) NULL)',
+            $this->connection->quoteIdentifier(self::TABLE_NAME),
+        ));
+        $descriptions = new TableDescriptions(
+            "Sales \u{1F4C8} report",
+            ['id' => "Key \u{1F511}", 'name' => 'Plain čšž'],
+        );
+        $logger = new TestLogger();
+
+        $this->createAdapter($logger)->applyDescriptions(self::TABLE_NAME, $descriptions);
+
+        self::assertSame(
+            ['id' => "Key \u{FFFD}", 'name' => 'Plain čšž'],
+            array_column($this->columns(), 'COLUMN_COMMENT', 'COLUMN_NAME'),
+        );
+        self::assertSame("Sales \u{FFFD} report", $this->tableComment());
+        self::assertTrue($logger->hasWarningThatContains('contains 4-byte characters'));
+
+        $secondRunLogger = new TestLogger();
+        $this->createAdapter($secondRunLogger)->applyDescriptions(self::TABLE_NAME, $descriptions);
+        self::assertFalse($secondRunLogger->hasInfoThatContains('Setting comment'));
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public function connectionCharsetProvider(): array
+    {
+        return [
+            'utf8mb4' => ['utf8mb4'],
+            'utf8 fallback' => ['utf8'],
+        ];
+    }
+
+    public function testSpatialColumnIsSkipped(): void
+    {
+        $table = $this->connection->quoteIdentifier(self::TABLE_NAME);
+        $this->connection->exec(sprintf(
+            'CREATE TABLE %s (`id` INT NOT NULL, `geo` POINT NOT NULL %s, SPATIAL INDEX (`geo`))',
+            $table,
+            $this->isMySql8() ? 'SRID 4326' : '',
+        ));
+        $columnsBefore = $this->columnsWithoutComments();
+        $logger = new TestLogger();
+
+        $this->createAdapter($logger)->applyDescriptions(
+            self::TABLE_NAME,
+            new TableDescriptions(null, ['id' => 'Identifier', 'geo' => 'Location']),
+        );
+
+        self::assertSame($columnsBefore, $this->columnsWithoutComments());
+        self::assertSame(
+            ['id' => 'Identifier', 'geo' => ''],
+            array_column($this->columns(), 'COLUMN_COMMENT', 'COLUMN_NAME'),
+        );
+        self::assertTrue($logger->hasWarning(sprintf(
+            'Column "geo" in table "%s" is a spatial column, its description was not written.',
+            self::TABLE_NAME,
+        )));
+    }
+
+    public function testUnchangedCommentsIssueNoDdl(): void
+    {
+        $this->connection->exec(sprintf(
+            'CREATE TABLE %s (`id` INT NOT NULL, `name` VARCHAR(10) NULL)',
+            $this->connection->quoteIdentifier(self::TABLE_NAME),
+        ));
+        $descriptions = new TableDescriptions('Table', ['id' => 'Identifier', 'name' => 'Name']);
+        $this->createAdapter(new TestLogger())->applyDescriptions(self::TABLE_NAME, $descriptions);
+
+        $logger = new TestLogger();
+        $this->createAdapter($logger)->applyDescriptions(self::TABLE_NAME, $descriptions);
+
+        self::assertFalse($logger->hasInfoThatContains('Setting comment'));
+    }
+
+    public function testHeldMetadataLockFailsFast(): void
+    {
+        $table = $this->connection->quoteIdentifier(self::TABLE_NAME);
+        $this->connection->exec(sprintf('CREATE TABLE %s (`id` INT NOT NULL)', $table));
+        $lockHolder = self::createConnection();
+        $lockHolder->exec('START TRANSACTION');
+        $lockHolder->fetchAll(sprintf('SELECT * FROM %s', $table));
+        $lockWaitBefore = $this->sessionLockWaitTimeout();
+
+        $start = microtime(true);
+        try {
+            $this->createAdapter(new TestLogger())->applyDescriptions(
+                self::TABLE_NAME,
+                new TableDescriptions('Table', ['id' => 'Identifier']),
+            );
+            self::fail('Lock wait timeout expected');
+        } catch (Throwable $e) {
+            self::assertStringContainsString('Lock wait timeout exceeded', $e->getMessage());
+        } finally {
+            $lockHolder->exec('ROLLBACK');
+        }
+
+        // A retried DDL would wait at least twice the timeout.
+        self::assertLessThan(MySQLWriteAdapter::LOCK_WAIT_TIMEOUT_SECONDS * 2, microtime(true) - $start);
+        self::assertSame($lockWaitBefore, $this->sessionLockWaitTimeout());
+    }
+
+    private function sessionLockWaitTimeout(): int
+    {
+        /** @var array{lock_wait_timeout: int|string}[] $rows */
+        $rows = $this->connection->fetchAll('SELECT @@SESSION.lock_wait_timeout AS lock_wait_timeout');
+        return (int) $rows[0]['lock_wait_timeout'];
+    }
+
+    private function createAdapter(TestLogger $logger): MySQLWriteAdapter
+    {
+        return new MySQLWriteAdapter($this->connection, new MySQLQueryBuilder('utf8mb4'), $logger);
+    }
+
+    private static function createConnection(): MySQLConnection
+    {
+        return MySQLConnectionFactory::create(DatabaseConfig::fromArray([
+            'host' => (string) getenv('DB_HOST'),
+            'port' => (string) getenv('DB_PORT'),
+            'database' => (string) getenv('DB_DATABASE'),
+            'user' => (string) getenv('DB_USER'),
+            '#password' => (string) getenv('DB_PASSWORD'),
+        ]), new TestLogger());
     }
 
     /**
@@ -117,6 +240,17 @@ class MySQLWriteAdapterDescriptionsDbTest extends TestCase
             $this->connection->quote(self::TABLE_NAME),
         ));
         return $columns;
+    }
+
+    private function tableComment(): string
+    {
+        /** @var array{TABLE_COMMENT: string}[] $tableInfo */
+        $tableInfo = $this->connection->fetchAll(sprintf(
+            'SELECT TABLE_COMMENT AS TABLE_COMMENT FROM INFORMATION_SCHEMA.TABLES '
+            . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
+            $this->connection->quote(self::TABLE_NAME),
+        ));
+        return $tableInfo[0]['TABLE_COMMENT'];
     }
 
     private function isMySql8(): bool

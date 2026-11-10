@@ -269,6 +269,30 @@ class MySQLWriteAdapterDescriptionsTest extends TestCase
         ));
     }
 
+    public function testFourByteCharactersAreReplaced(): void
+    {
+        $this->adapter->applyDescriptions('simple', new TableDescriptions(
+            "Sales \u{1F4C8} report",
+            ['id' => "Key \u{1F511}\u{1F511}", 'name' => 'Plain čšž'],
+        ));
+
+        self::assertSame([
+            "ALTER TABLE `simple` COMMENT = 'Sales \u{FFFD} report'",
+            "ALTER TABLE `simple` MODIFY COLUMN `id` int NOT NULL COMMENT 'Key \u{FFFD}\u{FFFD}', "
+            . 'MODIFY COLUMN `name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL '
+            . "COMMENT 'Plain čšž'",
+        ], $this->executed);
+        self::assertTrue($this->logger->hasWarning(
+            'Description of table "simple" contains 4-byte characters (such as emoji) that MySQL cannot store '
+            . "in a comment, they were replaced with \"\u{FFFD}\".",
+        ));
+        self::assertTrue($this->logger->hasWarning(
+            'Description of column "id" in table "simple" contains 4-byte characters (such as emoji) that MySQL '
+            . "cannot store in a comment, they were replaced with \"\u{FFFD}\".",
+        ));
+        self::assertCount(2, $this->logger->recordsByLevel['warning']);
+    }
+
     public function testMaxLengthIsNotTruncated(): void
     {
         $this->adapter->applyDescriptions('simple', new TableDescriptions(str_repeat('a', 2048), []));

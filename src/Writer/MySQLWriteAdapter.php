@@ -24,7 +24,12 @@ class MySQLWriteAdapter extends PdoWriteAdapter implements DescriptionWriteAdapt
     private const SPATIAL_TYPE_PATTERN = '/^(geometry|point|linestring|polygon|multipoint|multilinestring'
         . '|multipolygon|geometrycollection)$/i';
 
-    private const LOCK_WAIT_TIMEOUT_SECONDS = 10;
+    public const LOCK_WAIT_TIMEOUT_SECONDS = 10;
+
+    // The connection retries a failed query by default, which would multiply the lock wait.
+    private const DDL_MAX_RETRIES = 1;
+
+    private const FOUR_BYTE_CHARACTER_REPLACEMENT = "\u{FFFD}";
 
     /**
      * @throws UserException
@@ -97,10 +102,11 @@ class MySQLWriteAdapter extends PdoWriteAdapter implements DescriptionWriteAdapt
     {
         $tableComment = $descriptions->getTable();
         if ($tableComment !== null && $tableComment !== '') {
+            $target = sprintf('table "%s"', $tableName);
             $tableComment = $this->truncateComment(
-                $tableComment,
+                $this->replaceFourByteCharacters($tableComment, $target),
                 self::TABLE_COMMENT_MAX_LENGTH,
-                sprintf('table "%s"', $tableName),
+                $target,
             );
             // Skip the DDL when the stored comment already matches - ALTER TABLE needs an exclusive
             // metadata lock, so an incremental load must not issue it on every run.
@@ -157,10 +163,11 @@ class MySQLWriteAdapter extends PdoWriteAdapter implements DescriptionWriteAdapt
                 continue;
             }
 
+            $target = sprintf('column "%s" in table "%s"', $columnName, $tableName);
             $comment = $this->truncateComment(
-                $comment,
+                $this->replaceFourByteCharacters($comment, $target),
                 self::COLUMN_COMMENT_MAX_LENGTH,
-                sprintf('column "%s" in table "%s"', $columnName, $tableName),
+                $target,
             );
             if ($definition['COLUMN_COMMENT'] === $comment) {
                 continue;
@@ -192,7 +199,7 @@ class MySQLWriteAdapter extends PdoWriteAdapter implements DescriptionWriteAdapt
         $previous = $rows[0]['value'] ?? null;
         $this->connection->exec(sprintf('SET SESSION lock_wait_timeout = %d', self::LOCK_WAIT_TIMEOUT_SECONDS));
         try {
-            $this->connection->exec($sql);
+            $this->connection->exec($sql, self::DDL_MAX_RETRIES);
         } finally {
             if ($previous !== null) {
                 $this->connection->exec(sprintf('SET SESSION lock_wait_timeout = %d', (int) $previous));
@@ -245,6 +252,24 @@ class MySQLWriteAdapter extends PdoWriteAdapter implements DescriptionWriteAdapt
         /** @var array{version: string}[] $rows */
         $rows = $this->connection->fetchAll('SELECT VERSION() AS version');
         return str_contains(strtolower($rows[0]['version'] ?? ''), 'mariadb');
+    }
+
+    /**
+     * MySQL stores comments as utf8mb3: a 4-byte character becomes "?", or fails the ALTER on a utf8 connection.
+     */
+    private function replaceFourByteCharacters(string $comment, string $target): string
+    {
+        $replaced = preg_replace('/[\x{10000}-\x{10FFFF}]/u', self::FOUR_BYTE_CHARACTER_REPLACEMENT, $comment);
+        if ($replaced === null || $replaced === $comment) {
+            return $comment;
+        }
+        $this->logger->warning(sprintf(
+            'Description of %s contains 4-byte characters (such as emoji) that MySQL cannot store in a comment, '
+            . 'they were replaced with "%s".',
+            $target,
+            self::FOUR_BYTE_CHARACTER_REPLACEMENT,
+        ));
+        return $replaced;
     }
 
     private function truncateComment(string $comment, int $maxLength, string $target): string
