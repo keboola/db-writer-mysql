@@ -24,7 +24,10 @@ class MySQLWriteAdapter extends PdoWriteAdapter implements DescriptionWriteAdapt
     private const SPATIAL_TYPE_PATTERN = '/^(geometry|point|linestring|polygon|multipoint|multilinestring'
         . '|multipolygon|geometrycollection)$/i';
 
-    private const LOCK_WAIT_TIMEOUT_SECONDS = 10;
+    public const LOCK_WAIT_TIMEOUT_SECONDS = 10;
+
+    // The connection retries a failed query by default, which would multiply the lock wait.
+    private const DDL_MAX_RETRIES = 1;
 
     /**
      * @throws UserException
@@ -192,7 +195,7 @@ class MySQLWriteAdapter extends PdoWriteAdapter implements DescriptionWriteAdapt
         $previous = $rows[0]['value'] ?? null;
         $this->connection->exec(sprintf('SET SESSION lock_wait_timeout = %d', self::LOCK_WAIT_TIMEOUT_SECONDS));
         try {
-            $this->connection->exec($sql);
+            $this->connection->exec($sql, self::DDL_MAX_RETRIES);
         } finally {
             if ($previous !== null) {
                 $this->connection->exec(sprintf('SET SESSION lock_wait_timeout = %d', (int) $previous));
