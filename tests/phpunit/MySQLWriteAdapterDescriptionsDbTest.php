@@ -77,14 +77,50 @@ class MySQLWriteAdapterDescriptionsDbTest extends TestCase
         ksort($expectedComments);
         ksort($actualComments);
         self::assertSame($expectedComments, $actualComments);
-        /** @var array{TABLE_COMMENT: string}[] $tableInfo */
-        $tableInfo = $this->connection->fetchAll(sprintf(
-            'SELECT TABLE_COMMENT AS TABLE_COMMENT FROM INFORMATION_SCHEMA.TABLES '
-            . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
-            $this->connection->quote(self::TABLE_NAME),
-        ));
-        self::assertSame('Table: it\'s "new"', $tableInfo[0]['TABLE_COMMENT']);
+        self::assertSame('Table: it\'s "new"', $this->tableComment());
         self::assertFalse($logger->hasWarningRecords());
+    }
+
+    /**
+     * @dataProvider connectionCharsetProvider
+     */
+    public function testFourByteCharactersAreStoredAsReplacement(string $charset): void
+    {
+        // utf8 is what MySQLConnectionFactory falls back to when utf8mb4 is not available.
+        $this->connection->exec(sprintf('SET NAMES %s', $charset));
+        $this->connection->exec(sprintf(
+            'CREATE TABLE %s (`id` INT NOT NULL, `name` VARCHAR(10) NULL)',
+            $this->connection->quoteIdentifier(self::TABLE_NAME),
+        ));
+        $descriptions = new TableDescriptions(
+            "Sales \u{1F4C8} report",
+            ['id' => "Key \u{1F511}", 'name' => 'Plain čšž'],
+        );
+        $logger = new TestLogger();
+
+        $this->createAdapter($logger)->applyDescriptions(self::TABLE_NAME, $descriptions);
+
+        self::assertSame(
+            ['id' => "Key \u{FFFD}", 'name' => 'Plain čšž'],
+            array_column($this->columns(), 'COLUMN_COMMENT', 'COLUMN_NAME'),
+        );
+        self::assertSame("Sales \u{FFFD} report", $this->tableComment());
+        self::assertTrue($logger->hasWarningThatContains('contains 4-byte characters'));
+
+        $secondRunLogger = new TestLogger();
+        $this->createAdapter($secondRunLogger)->applyDescriptions(self::TABLE_NAME, $descriptions);
+        self::assertFalse($secondRunLogger->hasInfoThatContains('Setting comment'));
+    }
+
+    /**
+     * @return array<string, array{string}>
+     */
+    public function connectionCharsetProvider(): array
+    {
+        return [
+            'utf8mb4' => ['utf8mb4'],
+            'utf8 fallback' => ['utf8'],
+        ];
     }
 
     public function testUnchangedCommentsIssueNoDdl(): void
@@ -177,6 +213,17 @@ class MySQLWriteAdapterDescriptionsDbTest extends TestCase
             $this->connection->quote(self::TABLE_NAME),
         ));
         return $columns;
+    }
+
+    private function tableComment(): string
+    {
+        /** @var array{TABLE_COMMENT: string}[] $tableInfo */
+        $tableInfo = $this->connection->fetchAll(sprintf(
+            'SELECT TABLE_COMMENT AS TABLE_COMMENT FROM INFORMATION_SCHEMA.TABLES '
+            . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
+            $this->connection->quote(self::TABLE_NAME),
+        ));
+        return $tableInfo[0]['TABLE_COMMENT'];
     }
 
     private function isMySql8(): bool
