@@ -123,6 +123,33 @@ class MySQLWriteAdapterDescriptionsDbTest extends TestCase
         ];
     }
 
+    public function testSpatialColumnIsSkipped(): void
+    {
+        $table = $this->connection->quoteIdentifier(self::TABLE_NAME);
+        $this->connection->exec(sprintf(
+            'CREATE TABLE %s (`id` INT NOT NULL, `geo` POINT NOT NULL %s, SPATIAL INDEX (`geo`))',
+            $table,
+            $this->isMySql8() ? 'SRID 4326' : '',
+        ));
+        $columnsBefore = $this->columnsWithoutComments();
+        $logger = new TestLogger();
+
+        $this->createAdapter($logger)->applyDescriptions(
+            self::TABLE_NAME,
+            new TableDescriptions(null, ['id' => 'Identifier', 'geo' => 'Location']),
+        );
+
+        self::assertSame($columnsBefore, $this->columnsWithoutComments());
+        self::assertSame(
+            ['id' => 'Identifier', 'geo' => ''],
+            array_column($this->columns(), 'COLUMN_COMMENT', 'COLUMN_NAME'),
+        );
+        self::assertTrue($logger->hasWarning(sprintf(
+            'Column "geo" in table "%s" is a spatial column, its description was not written.',
+            self::TABLE_NAME,
+        )));
+    }
+
     public function testUnchangedCommentsIssueNoDdl(): void
     {
         $this->connection->exec(sprintf(
