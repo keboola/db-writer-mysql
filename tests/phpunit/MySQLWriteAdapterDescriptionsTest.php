@@ -19,10 +19,15 @@ class MySQLWriteAdapterDescriptionsTest extends TestCase
     /** @var string[] */
     private array $fetched = [];
 
+    /** @var string[] */
+    private array $lockWaitTimeouts = [];
+
     /** @var array<int, array<string, ?string>> */
     private array $columns = [];
 
     private string $version = '8.4.0';
+
+    private ?string $tableComment = '';
 
     private TestLogger $logger;
 
@@ -32,7 +37,9 @@ class MySQLWriteAdapterDescriptionsTest extends TestCase
     {
         $this->executed = [];
         $this->fetched = [];
+        $this->lockWaitTimeouts = [];
         $this->version = '8.4.0';
+        $this->tableComment = '';
         $this->columns = [
             self::column('id', 'int', 'NO', null),
             self::column('name', 'varchar(255)', 'YES', null, 'utf8mb4', 'utf8mb4_0900_ai_ci'),
@@ -42,12 +49,22 @@ class MySQLWriteAdapterDescriptionsTest extends TestCase
         $connection = $this->createPartialMock(MySQLConnection::class, ['exec', 'fetchAll', 'quote']);
         $connection->method('quote')->willReturnCallback(fn(string $str) => "'" . addslashes($str) . "'");
         $connection->method('exec')->willReturnCallback(function (string $sql): void {
+            if (str_starts_with($sql, 'SET SESSION lock_wait_timeout')) {
+                $this->lockWaitTimeouts[] = $sql;
+                return;
+            }
             $this->executed[] = $sql;
         });
         $connection->method('fetchAll')->willReturnCallback(function (string $sql): array {
+            if (str_contains($sql, 'lock_wait_timeout')) {
+                return [['value' => '31536000']];
+            }
             $this->fetched[] = $sql;
             if (str_starts_with($sql, 'SELECT VERSION()')) {
                 return [['version' => $this->version]];
+            }
+            if (str_contains($sql, 'INFORMATION_SCHEMA.TABLES')) {
+                return [['TABLE_COMMENT' => $this->tableComment]];
             }
             return $this->columns;
         });
@@ -70,7 +87,7 @@ class MySQLWriteAdapterDescriptionsTest extends TestCase
         ], $this->executed);
         self::assertStringContainsString(
             'FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = \'simple\'',
-            $this->fetched[0],
+            $this->fetched[1],
         );
     }
 
@@ -89,7 +106,52 @@ class MySQLWriteAdapterDescriptionsTest extends TestCase
         $this->adapter->applyDescriptions('simple', new TableDescriptions('Table description', []));
 
         self::assertSame(['ALTER TABLE `simple` COMMENT = \'Table description\''], $this->executed);
-        self::assertSame([], $this->fetched);
+        self::assertCount(1, $this->fetched);
+        self::assertStringContainsString('INFORMATION_SCHEMA.TABLES', $this->fetched[0]);
+    }
+
+    public function testMatchingCommentsIssueNoDdl(): void
+    {
+        $this->tableComment = 'Table description';
+        $this->columns = [
+            self::column('id', 'int', 'NO', null, null, null, '', 'Identifier'),
+            self::column('name', 'varchar(255)', 'YES', null, 'utf8mb4', 'utf8mb4_0900_ai_ci', '', 'Full name'),
+        ];
+
+        $this->adapter->applyDescriptions('simple', new TableDescriptions(
+            'Table description',
+            ['id' => 'Identifier', 'name' => 'Full name'],
+        ));
+
+        self::assertSame([], $this->executed);
+    }
+
+    public function testOnlyChangedColumnIsModified(): void
+    {
+        $this->columns = [
+            self::column('id', 'int', 'NO', null, null, null, '', 'Identifier'),
+            self::column('name', 'varchar(255)', 'YES', null, 'utf8mb4', 'utf8mb4_0900_ai_ci', '', 'Old'),
+        ];
+
+        $this->adapter->applyDescriptions('simple', new TableDescriptions(
+            null,
+            ['id' => 'Identifier', 'name' => 'Full name'],
+        ));
+
+        self::assertSame([
+            'ALTER TABLE `simple` MODIFY COLUMN `name` varchar(255) CHARACTER SET utf8mb4 '
+            . 'COLLATE utf8mb4_0900_ai_ci NULL COMMENT \'Full name\'',
+        ], $this->executed);
+    }
+
+    public function testLockWaitTimeoutIsLoweredAndRestored(): void
+    {
+        $this->adapter->applyDescriptions('simple', new TableDescriptions(null, ['id' => 'Identifier']));
+
+        self::assertSame([
+            'SET SESSION lock_wait_timeout = 10',
+            'SET SESSION lock_wait_timeout = 31536000',
+        ], $this->lockWaitTimeouts);
     }
 
     public function testEmptyDescriptionsDoNothing(): void
@@ -173,6 +235,18 @@ class MySQLWriteAdapterDescriptionsTest extends TestCase
         ));
     }
 
+    public function testSpatialColumnIsSkippedWithWarning(): void
+    {
+        $this->columns = [self::column('area', 'point', 'NO', null)];
+
+        $this->adapter->applyDescriptions('simple', new TableDescriptions(null, ['area' => 'Location']));
+
+        self::assertSame([], $this->executed);
+        self::assertTrue($this->logger->hasWarning(
+            'Column "area" in table "simple" is a spatial column, its description was not written.',
+        ));
+    }
+
     public function testTruncation(): void
     {
         $this->adapter->applyDescriptions('simple', new TableDescriptions(
@@ -230,6 +304,7 @@ class MySQLWriteAdapterDescriptionsTest extends TestCase
         ?string $charset = null,
         ?string $collation = null,
         string $extra = '',
+        string $comment = '',
     ): array {
         return [
             'COLUMN_NAME' => $name,
@@ -239,6 +314,7 @@ class MySQLWriteAdapterDescriptionsTest extends TestCase
             'EXTRA' => $extra,
             'CHARACTER_SET_NAME' => $charset,
             'COLLATION_NAME' => $collation,
+            'COLUMN_COMMENT' => $comment,
         ];
     }
 }

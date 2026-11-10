@@ -180,12 +180,21 @@ SQL;
         );
     }
 
+    public function tableCommentSelectQueryStatement(Connection $connection, string $tableName): string
+    {
+        return sprintf(
+            'SELECT TABLE_COMMENT AS TABLE_COMMENT FROM INFORMATION_SCHEMA.TABLES '
+            . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s',
+            $connection->quote($tableName),
+        );
+    }
+
     public function columnDefinitionsQueryStatement(Connection $connection, string $tableName): string
     {
         return sprintf(
             'SELECT COLUMN_NAME AS COLUMN_NAME, COLUMN_TYPE AS COLUMN_TYPE, IS_NULLABLE AS IS_NULLABLE, '
             . 'COLUMN_DEFAULT AS COLUMN_DEFAULT, EXTRA AS EXTRA, CHARACTER_SET_NAME AS CHARACTER_SET_NAME, '
-            . 'COLLATION_NAME AS COLLATION_NAME '
+            . 'COLLATION_NAME AS COLLATION_NAME, COLUMN_COMMENT AS COLUMN_COMMENT '
             . 'FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s '
             . 'ORDER BY ORDINAL_POSITION',
             $connection->quote($tableName),

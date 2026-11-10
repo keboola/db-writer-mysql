@@ -21,6 +21,11 @@ class MySQLWriteAdapter extends PdoWriteAdapter implements DescriptionWriteAdapt
 
     private const COLUMN_COMMENT_MAX_LENGTH = 1024;
 
+    private const SPATIAL_TYPE_PATTERN = '/^(geometry|point|linestring|polygon|multipoint|multilinestring'
+        . '|multipolygon|geometrycollection)$/i';
+
+    private const LOCK_WAIT_TIMEOUT_SECONDS = 10;
+
     /**
      * @throws UserException
      * @throws PropertyNotSetException
@@ -92,16 +97,21 @@ class MySQLWriteAdapter extends PdoWriteAdapter implements DescriptionWriteAdapt
     {
         $tableComment = $descriptions->getTable();
         if ($tableComment !== null && $tableComment !== '') {
-            $this->logger->info(sprintf('Setting comment on table "%s"', $tableName));
-            $this->connection->exec($this->queryBuilder->tableCommentQueryStatement(
-                $this->connection,
-                $tableName,
-                $this->truncateComment(
+            $tableComment = $this->truncateComment(
+                $tableComment,
+                self::TABLE_COMMENT_MAX_LENGTH,
+                sprintf('table "%s"', $tableName),
+            );
+            // Skip the DDL when the stored comment already matches - ALTER TABLE needs an exclusive
+            // metadata lock, so an incremental load must not issue it on every run.
+            if ($this->fetchTableComment($tableName) !== $tableComment) {
+                $this->logger->info(sprintf('Setting comment on table "%s"', $tableName));
+                $this->execDdl($this->queryBuilder->tableCommentQueryStatement(
+                    $this->connection,
+                    $tableName,
                     $tableComment,
-                    self::TABLE_COMMENT_MAX_LENGTH,
-                    sprintf('table "%s"', $tableName),
-                ),
-            ));
+                ));
+            }
         }
 
         $columnComments = $descriptions->getColumns();
@@ -136,24 +146,67 @@ class MySQLWriteAdapter extends PdoWriteAdapter implements DescriptionWriteAdapt
                 ));
                 continue;
             }
+            // INFORMATION_SCHEMA.COLUMNS.COLUMN_TYPE does not carry the SRID of a spatial column,
+            // so restating the definition would silently drop it.
+            if (preg_match(self::SPATIAL_TYPE_PATTERN, $definition['COLUMN_TYPE'])) {
+                $this->logger->warning(sprintf(
+                    'Column "%s" in table "%s" is a spatial column, its description was not written.',
+                    $columnName,
+                    $tableName,
+                ));
+                continue;
+            }
+
+            $comment = $this->truncateComment(
+                $comment,
+                self::COLUMN_COMMENT_MAX_LENGTH,
+                sprintf('column "%s" in table "%s"', $columnName, $tableName),
+            );
+            if ($definition['COLUMN_COMMENT'] === $comment) {
+                continue;
+            }
 
             $this->logger->info(sprintf('Setting comment on column "%s" in table "%s"', $columnName, $tableName));
             $columns[$definition['COLUMN_NAME']] = [
                 'definition' => $this->queryBuilder->columnDefinition($this->connection, $definition, $isMariaDb),
-                'comment' => $this->truncateComment(
-                    $comment,
-                    self::COLUMN_COMMENT_MAX_LENGTH,
-                    sprintf('column "%s" in table "%s"', $columnName, $tableName),
-                ),
+                'comment' => $comment,
             ];
         }
 
         if ($columns === []) {
             return;
         }
-        $this->connection->exec(
+        $this->execDdl(
             $this->queryBuilder->modifyColumnCommentsQueryStatement($this->connection, $tableName, $columns),
         );
+    }
+
+    /**
+     * Runs a comment DDL with a short metadata-lock wait, so that a table busy with a long
+     * running query makes the comment fail fast instead of blocking every query behind it.
+     */
+    private function execDdl(string $sql): void
+    {
+        /** @var array{value: ?string}[] $rows */
+        $rows = $this->connection->fetchAll('SELECT @@SESSION.lock_wait_timeout AS value');
+        $previous = $rows[0]['value'] ?? null;
+        $this->connection->exec(sprintf('SET SESSION lock_wait_timeout = %d', self::LOCK_WAIT_TIMEOUT_SECONDS));
+        try {
+            $this->connection->exec($sql);
+        } finally {
+            if ($previous !== null) {
+                $this->connection->exec(sprintf('SET SESSION lock_wait_timeout = %d', (int) $previous));
+            }
+        }
+    }
+
+    private function fetchTableComment(string $tableName): ?string
+    {
+        /** @var array{TABLE_COMMENT: ?string}[] $rows */
+        $rows = $this->connection->fetchAll(
+            $this->queryBuilder->tableCommentSelectQueryStatement($this->connection, $tableName),
+        );
+        return $rows[0]['TABLE_COMMENT'] ?? null;
     }
 
     /**
@@ -165,6 +218,7 @@ class MySQLWriteAdapter extends PdoWriteAdapter implements DescriptionWriteAdapt
      *     EXTRA: ?string,
      *     CHARACTER_SET_NAME: ?string,
      *     COLLATION_NAME: ?string,
+     *     COLUMN_COMMENT: ?string,
      * }[]
      */
     private function fetchColumnDefinitions(string $tableName): array
@@ -177,6 +231,7 @@ class MySQLWriteAdapter extends PdoWriteAdapter implements DescriptionWriteAdapt
          *     EXTRA: ?string,
          *     CHARACTER_SET_NAME: ?string,
          *     COLLATION_NAME: ?string,
+         *     COLUMN_COMMENT: ?string,
          * }[] $rows
          */
         $rows = $this->connection->fetchAll(
